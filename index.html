@@ -372,6 +372,14 @@ if('serviceWorker' in navigator){
   });
 }
 
+// Listen for messages from service worker
+navigator.serviceWorker.addEventListener('message', e => {
+  if (e.data && e.data.type === 'LUFAST_FRESH_SHARE') {
+    // SW báo hiệu đây là share thật → set cờ để fallback URL handler biết
+    sessionStorage.setItem('lufast_fresh_share', '1');
+  }
+});
+
 // ── DB ────────────────────────────────────────────────────────────────────
 let db;
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('LuFastDB',1);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('notes'))d.createObjectStore('notes',{keyPath:'id'});if(!d.objectStoreNames.contains('trash'))d.createObjectStore('trash',{keyPath:'id'})};r.onsuccess=e=>{db=e.target.result;res()};r.onerror=()=>rej()})}
@@ -1082,18 +1090,32 @@ if ('launchQueue' in window) {
   });
 }
 
-// Fallback: nhận từ URL params (khi SW redirect về /?text=...&url=...)
 (() => {
   const p = new URLSearchParams(location.search);
-  if (p.has('text') || p.has('url')) {
-    handleShared(
-      p.get('title') || '',
-      p.get('text')  || '',
-      p.get('url')   || ''
-    );
-    // Xóa params khỏi URL để không trigger lại khi reload
+  const hasShareParams = p.has('text') || p.has('url');
+
+  if (!hasShareParams) return;
+
+  // Kiểm tra: SW có vừa redirect tới đây không?
+  // SW sẽ set cờ này vào sessionStorage trước khi redirect
+  const freshShare = sessionStorage.getItem('lufast_fresh_share');
+
+  if (!freshShare) {
+    // Không có cờ → đây là Windows PWA mở lại URL cũ → bỏ qua
     history.replaceState({}, '', '/');
+    return;
   }
+
+  // Có cờ → share thật, xóa cờ và xử lý
+  sessionStorage.removeItem('lufast_fresh_share');
+
+  handleShared(
+    p.get('title') || '',
+    p.get('text')  || '',
+    p.get('url')   || ''
+  );
+
+  history.replaceState({}, '', '/');
 })();
 
 // ── ANDROID BACK BUTTON (hardware/gesture) ────────────────────────────────
