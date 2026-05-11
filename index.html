@@ -295,7 +295,7 @@ function goHome(){
   renderList();
 }
 
-function openTrash(){renderTrash();showView('trash-view')}
+function openTrash(){console.log('openTrash called');renderTrash();showView('trash-view')}
 
 // ── DROPDOWN ──────────────────────────────────────────────────────────────
 function toggleDd(){const d=document.getElementById('dd'),o=document.getElementById('overlay');d.classList.contains('open')?(d.classList.remove('open'),o.classList.remove('on')):(d.classList.add('open'),o.classList.add('on'))}
@@ -499,6 +499,7 @@ function xEnc(s){let r='';for(let i=0;i<s.length;i++)r+=String.fromCharCode(s.ch
 function xDec(s){const d=decodeURIComponent(escape(atob(s)));let r='';for(let i=0;i<d.length;i++)r+=String.fromCharCode(d.charCodeAt(i)^EK.charCodeAt(i%EK.length));return r}
 
 async function exportNotes(){
+  console.log('exportNotes called');
   closeDd();closeDd2();
   const all=await dbAll('notes');
   const encoded=xEnc(JSON.stringify({v:1,notes:all,exportedAt:Date.now()}));
