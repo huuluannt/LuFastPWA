@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffffff">
+<title>LuFast</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#fff;--surface:#f8f8f8;--border:#ebebeb;--text:#111;--text2:#666;--text3:#aaa;--danger:#e53935;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08);--hh:56px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+/* TOAST */
+#toast-wrap{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.toast{background:rgba(20,20,20,.88);color:#fff;padding:7px 18px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;white-space:nowrap}
+.toast.show{opacity:1}
+/* VIEWS */
+.view{display:none;flex-direction:column;height:100dvh;overflow:hidden}
+.view.active{display:flex}
+/* HEADER */
+.hdr{height:var(--hh);min-height:var(--hh);display:flex;align-items:center;padding:0 12px;gap:8px;border-bottom:1px solid var(--border);background:var(--bg);z-index:10;flex-shrink:0;position:relative}
+.logo{width:32px;height:32px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.logo svg{width:18px;height:18px;fill:#fff}
+.app-lbl{font-size:17px;font-weight:700;cursor:pointer;letter-spacing:-.5px;flex-shrink:0}
+.srch-wrap{flex:1;position:relative;display:flex;align-items:center}
+.srch-wrap input{width:100%;padding:7px 28px 7px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:14px;background:var(--surface);outline:none;transition:border .2s;-webkit-appearance:none}
+.srch-wrap input::-webkit-search-cancel-button{display:none}
+.srch-wrap input:focus{border-color:#bbb}
+.srch-x{position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;display:none;padding:2px 4px}
+.btn-more{background:none;border:none;cursor:pointer;padding:6px 4px;font-size:20px;color:var(--text2);flex-shrink:0}
+/* DROPDOWN */
+.ddmenu{position:absolute;right:12px;top:calc(var(--hh) - 4px);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:200;min-width:150px;overflow:hidden;display:none}
+.ddmenu.open{display:block}
+.ddmenu button{display:flex;align-items:center;gap:10px;width:100%;padding:13px 18px;background:none;border:none;font-size:15px;cursor:pointer;color:var(--text);text-align:left;border-bottom:1px solid var(--border)}
+.ddmenu button:last-child{border-bottom:none}
+.ddmenu button:active{background:var(--surface)}
+/* OVERLAY */
+#overlay{display:none;position:fixed;inset:0;z-index:100}
+#overlay.on{display:block}
+/* QUICKNOTE */
+.qnote{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.qn-r1{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.btn-img{background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap}
+.inp-wrap{flex:1;position:relative}
+.inp-wrap input{width:100%;padding:7px 26px 7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--bg);transition:border .2s}
+.inp-wrap input:focus{border-color:#bbb}
+.ix{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;display:none;line-height:1;padding:2px}
+.qn-r2{display:flex;gap:8px;align-items:stretch}
+.qn-ta{flex:1;resize:none;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;min-height:72px;max-height:100px;background:var(--bg);line-height:1.5;transition:border .2s}
+.qn-ta:focus{border-color:#bbb}
+.qbtns{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.qbtns button{flex:1;padding:0 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:var(--bg);color:var(--text)}
+.qbtns .bsave{background:#111;color:#fff;border-color:#111}
+.qbtns button:active{opacity:.7}
+/* LIST */
+.listnote{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
+.ncard{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:11px;margin-bottom:8px;cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+.ncard:active{box-shadow:var(--shadow)}
+.nthumb{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.nbody{flex:1;min-width:0}
+.ntitle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.ncontent{font-size:13px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ntime{font-size:11px;color:var(--text3);margin-top:4px}
+.view-all{text-align:center;padding:12px;color:var(--text2);font-size:14px}
+.view-all span{text-decoration:underline;cursor:pointer}
+.empty{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty .eico{font-size:40px;margin-bottom:12px}
+.srch-hdr{padding:8px 12px 2px;font-size:13px;color:var(--text3);flex-shrink:0;display:none}
+mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
+/* DETAIL */
+.dbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
+.dthumb-row{display:flex;gap:10px;align-items:stretch;margin-bottom:12px}
+.dthumb-box{width:90px;height:90px;border-radius:var(--radius);overflow:hidden;flex-shrink:0;cursor:pointer;background:var(--surface);border:1.5px solid var(--border)}
+.dthumb-box img{width:100%;height:100%;object-fit:cover;display:none}
+.dthumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--text3)}
+.dtc{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:space-between}
+.dtc .inp-wrap input{width:100%;height:100%;padding:8px 26px 8px 10px;font-size:15px;font-weight:600}
+.dtime{font-size:11px;color:var(--text3)}
+.dta{width:100%;resize:none;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:var(--bg);min-height:200px;line-height:1.6;transition:border .2s}
+.dta:focus{border-color:#bbb}
+/* FOOTER */
+.footer{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.footer button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
+.footer .bsd{background:#111;color:#fff;border-color:#111}
+.footer .bdd{color:var(--danger);border-color:var(--danger)}
+.footer button:active{opacity:.7}
+/* TRASH */
+.trash-bar{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.btn-dall{width:100%;padding:10px;background:#fff;border:1.5px solid var(--danger);color:var(--danger);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.tlist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
+.tcard{border:1px solid var(--border);border-radius:var(--radius);padding:11px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
+.tcbody{flex:1;min-width:0}
+.tctitle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tccontent{font-size:13px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px}
+.tcbtns{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.tcbtns button{padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
+.tcbtns .brest{border-color:#111;color:#111}
+.tcbtns .bdel{border-color:var(--danger);color:var(--danger)}
+/* LIGHTBOX */
+#lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:1000;flex-direction:column;touch-action:none}
+#lb.open{display:flex}
+#lb-wrap{flex:1;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#lb-img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;pointer-events:none;transform-origin:center center;will-change:transform}
+#lb-acts{display:flex;gap:8px;padding:14px 12px;flex-shrink:0;justify-content:center;flex-wrap:wrap}
+#lb-acts button{padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+/* SHARE */
+#share-view{display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#share-view.active{display:flex}
+.share-title{font-size:18px;font-weight:700;margin-bottom:16px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="toast-wrap"></div>
+<div id="overlay" onclick="closeDd()"></div>
+
+<!-- MAIN VIEW -->
+<div class="view active" id="main-view">
+  <div class="hdr" id="main-hdr">
+    <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
+    <span class="app-lbl" onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
+    <div class="srch-wrap">
+      <input type="search" id="srch" placeholder="Tìm ghi chú…" autocomplete="off"
+        oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
+      <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
+    </div>
+    <button class="btn-more" onclick="toggleDd()">⋯</button>
+    <div class="ddmenu" id="dd">
+      <button onclick="exportNotes()">📤 Export</button>
+      <button onclick="closeDd();document.getElementById('imp-file').click()">📥 Import</button>
+      <button onclick="closeDd();openTrash()">🗑️ Trash</button>
+    </div>
+  </div>
+  <input type="file" id="imp-file" accept=".lufast" style="display:none" onchange="importNotes(event)">
+  <div class="qnote">
+    <div class="qn-r1">
+      <button class="btn-img" onclick="triggerImg('main')">📷 Ảnh</button>
+      <div class="inp-wrap">
+        <input type="text" id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')">
+        <button class="ix" id="qx-t" onclick="clrInp('qn-t','qx-t')">×</button>
+      </div>
+    </div>
+    <div class="qn-r2">
+      <textarea class="qn-ta" id="qn-content" placeholder="Nội dung…" rows="3"></textarea>
+      <div class="qbtns">
+        <button onclick="clearQuick()">Clear</button>
+        <button class="bsave" onclick="saveQuick()">Save</button>
+      </div>
+    </div>
+  </div>
+  <div class="srch-hdr" id="srch-hdr"></div>
+  <div class="listnote" id="listnote"></div>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="view" id="detail-view">
+  <div class="hdr">
+    <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
+    <span class="app-lbl" onclick="goHome()">LuFast</span>
+    <div class="srch-wrap">
+      <input type="search" id="srch2" placeholder="Tìm ghi chú…" autocomplete="off"
+        oninput="syncSearch(this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
+      <button class="srch-x" id="srch-x2" onclick="clearSearch2()">×</button>
+    </div>
+    <button class="btn-more" onclick="toggleDd2()">⋯</button>
+    <div class="ddmenu" id="dd2" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
+      <button onclick="exportNotes()">📤 Export</button>
+      <button onclick="closeDd2();document.getElementById('imp-file').click()">📥 Import</button>
+      <button onclick="closeDd2();openTrash()">🗑️ Trash</button>
+    </div>
+  </div>
+  <div class="dbody">
+    <div class="dthumb-row">
+      <div class="dthumb-box" id="dthumb" onclick="onThumbClick()">
+        <div class="dthumb-ph" id="dthumb-ph">📷</div>
+        <img id="dthumb-img">
+      </div>
+      <div class="dtc">
+        <div class="inp-wrap" style="flex:1;display:flex;flex-direction:column">
+          <input type="text" id="d-title" placeholder="Tiêu đề…" style="flex:1" oninput="chkX('d-title','dx-t')">
+          <button class="ix" id="dx-t" onclick="clrInp('d-title','dx-t')">×</button>
+        </div>
+        <div class="dtime" id="d-time"></div>
+      </div>
+    </div>
+    <textarea class="dta" id="d-content" placeholder="Nội dung…"></textarea>
+  </div>
+  <div class="footer">
+    <button class="bsd" onclick="saveDetail()">Save</button>
+    <button onclick="copyDetail()">Copy</button>
+    <button class="bdd" onclick="deleteNote()">Delete</button>
+    <button onclick="backDetail()">Back</button>
+  </div>
+</div>
+
+<!-- TRASH VIEW -->
+<div class="view" id="trash-view">
+  <div class="hdr">
+    <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
+    <span class="app-lbl" onclick="goHome()">LuFast</span>
+    <span style="flex:1;text-align:right;font-size:14px;color:var(--text2)">Thùng rác</span>
+  </div>
+  <div class="trash-bar"><button class="btn-dall" onclick="delAllTrash()">Xóa tất cả trong Trash</button></div>
+  <div class="tlist" id="tlist"></div>
+</div>
+
+<!-- SHARE VIEW -->
+<div id="share-view">
+  <div class="share-title">⚡ LuFast — Lưu nhanh</div>
+  <div style="width:100%;max-width:420px">
+    <div class="inp-wrap" style="margin-bottom:8px">
+      <input type="text" id="sh-t" placeholder="Tiêu đề…" style="width:100%;padding:8px 26px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none" oninput="chkX('sh-t','shx-t')">
+      <button class="ix" id="shx-t" onclick="clrInp('sh-t','shx-t')">×</button>
+    </div>
+    <div class="qn-r2">
+      <textarea class="qn-ta" id="sh-c" placeholder="Nội dung được share…" style="min-height:100px"></textarea>
+      <div class="qbtns">
+        <button onclick="document.getElementById('sh-c').value='';document.getElementById('sh-t').value='';document.getElementById('shx-t').style.display='none'">Clear</button>
+        <button class="bsave" onclick="saveShare()">Save</button>
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:var(--text3);text-align:center">Save xong sẽ tự đóng</div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lb">
+  <div id="lb-wrap">
+    <img id="lb-img" src="">
+  </div>
+  <div id="lb-acts">
+    <button onclick="lbCopy()">Copy</button>
+    <button onclick="lbDownload()">Download</button>
+    <button onclick="lbReplace()">Replace</button>
+    <button onclick="lbDelete()">Delete</button>
+    <button onclick="closeLb()">✕ Đóng</button>
+  </div>
+</div>
+
+<input type="file" id="add-img" accept="image/*" style="display:none" onchange="handleAddImg(event)">
+<input type="file" id="rep-img" accept="image/*" style="display:none" onchange="handleRepImg(event)">
+
+<script>
+// ── SERVICE WORKER REGISTRATION ────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(() => {
+    console.log('Service Worker registration failed');
+  });
+}
+
+// ── DB ────────────────────────────────────────────────────────────────────
+let db;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('LuFastDB',1);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('notes'))d.createObjectStore('notes',{keyPath:'id'});if(!d.objectStoreNames.contains('trash'))d.createObjectStore('trash',{keyPath:'id'})};r.onsuccess=e=>{db=e.target.result;res()};r.onerror=()=>rej()})}
+function dbAll(s){return new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej()})}
+function dbPut(s,o){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(o);r.onsuccess=()=>res();r.onerror=()=>rej()})}
+function dbDel(s,id){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(id);r.onsuccess=()=>res();r.onerror=()=>rej()})}
+function dbClear(s){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).clear();r.onsuccess=()=>res();r.onerror=()=>rej()})}
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let notes=[],trash=[],curNote=null,showAll=false,curSearchWords=null,imgCtx=null,quickImg=null;
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+function toast(msg,dur=2200){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.getElementById('toast-wrap').appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},dur)}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmt(ts){const d=new Date(ts),diff=Date.now()-d;if(diff<60000)return'Vừa xong';if(diff<3600000)return Math.floor(diff/60000)+'p trước';if(diff<86400000)return Math.floor(diff/3600000)+'h trước';return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}
+
+const DM={à:'a',á:'a',ả:'a',ã:'a',ạ:'a',ă:'a',ắ:'a',ặ:'a',ằ:'a',ẳ:'a',ẵ:'a',â:'a',ấ:'a',ầ:'a',ẩ:'a',ẫ:'a',ậ:'a',è:'e',é:'e',ẻ:'e',ẽ:'e',ẹ:'e',ê:'e',ế:'e',ề:'e',ể:'e',ễ:'e',ệ:'e',ì:'i',í:'i',ỉ:'i',ĩ:'i',ị:'i',ò:'o',ó:'o',ỏ:'o',õ:'o',ọ:'o',ô:'o',ố:'o',ồ:'o',ổ:'o',ỗ:'o',ộ:'o',ơ:'o',ớ:'o',ờ:'o',ở:'o',ỡ:'o',ợ:'o',ù:'u',ú:'u',ủ:'u',ũ:'u',ụ:'u',ư:'u',ứ:'u',ừ:'u',ử:'u',ữ:'u',ự:'u',ỳ:'y',ý:'y',ỷ:'y',ỹ:'y',ỵ:'y',đ:'d'};
+function nd(s){return(s||'').toLowerCase().replace(/[^\u0000-\u007E]/g,m=>DM[m]||m)}
+
+function scoreNote(n,words){const tn=nd(n.title),cn=nd(n.content||'');let s=0;for(const w of words){if(tn.includes(w))s+=2;else if(cn.includes(w))s+=1;else return -1}return s}
+
+function hlText(text,words){if(!words||!words.length)return esc(text);const raw=esc(text);if(!raw)return raw;let r=raw;for(const w of words){if(!w)continue;const re=new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');r=r.replace(re,'<mark class="hl">$1</mark>')}return r}
+
+function chkX(inpId,btnId){const v=document.getElementById(inpId).value;document.getElementById(btnId).style.display=v?'block':'none'}
+function clrInp(inpId,btnId){const el=document.getElementById(inpId);el.value='';document.getElementById(btnId).style.display='none';el.focus()}
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active')}
+
+function goHome(){
+  document.getElementById('srch').value='';
+  document.getElementById('srch-x').style.display='none';
+  document.getElementById('srch-hdr').style.display='none';
+  // sync detail header search too
+  document.getElementById('srch2').value='';
+  document.getElementById('srch-x2').style.display='none';
+  curSearchWords=null;showAll=false;
+  closeDd();closeDd2();
+  showView('main-view');
+  renderList();
+}
+
+function openTrash(){renderTrash();showView('trash-view')}
+
+// ── DROPDOWN ──────────────────────────────────────────────────────────────
+function toggleDd(){const d=document.getElementById('dd'),o=document.getElementById('overlay');d.classList.contains('open')?(d.classList.remove('open'),o.classList.remove('on')):(d.classList.add('open'),o.classList.add('on'))}
+function closeDd(){document.getElementById('dd').classList.remove('open');document.getElementById('overlay').classList.remove('on')}
+function toggleDd2(){const d=document.getElementById('dd2');d.classList.contains('open')?d.classList.remove('open'):d.classList.add('open')}
+function closeDd2(){document.getElementById('dd2').classList.remove('open')}
+
+// ── QUICKNOTE ─────────────────────────────────────────────────────────────
+function clearQuick(){document.getElementById('qn-content').value='';document.getElementById('qn-t').value='';document.getElementById('qx-t').style.display='none';quickImg=null;document.getElementById('qn-content').focus()}
+async function saveQuick(){const t=document.getElementById('qn-t').value.trim(),c=document.getElementById('qn-content').value.trim();if(!t&&!c&&!quickImg){toast('Không có nội dung để lưu');return}const n={id:uid(),title:t,content:c,img:quickImg,createdAt:Date.now(),updatedAt:Date.now()};await dbPut('notes',n);notes.unshift(n);clearQuick();renderList();toast('Đã lưu ✓')}
+
+// ── SEARCH ────────────────────────────────────────────────────────────────
+function doSearch(){
+  const q=document.getElementById('srch').value;
+  document.getElementById('srch-x').style.display=q?'block':'none';
+  if(!q){curSearchWords=null;document.getElementById('srch-hdr').style.display='none';renderList();return}
+  const words=nd(q).trim().split(/\s+/).filter(Boolean);
+  curSearchWords=words;
+  const scored=notes.map(n=>({n,s:scoreNote(n,words)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+  const hdr=document.getElementById('srch-hdr');
+  hdr.style.display='block';hdr.textContent=`Tìm thấy ${scored.length} kết quả`;
+  renderList(words,scored.map(x=>x.n));
+}
+function clearSearch(){document.getElementById('srch').value='';document.getElementById('srch-x').style.display='none';document.getElementById('srch-hdr').style.display='none';curSearchWords=null;document.getElementById('srch').focus();renderList()}
+
+// Sync search from detail view header
+function syncSearch(val){
+  document.getElementById('srch').value=val;
+  document.getElementById('srch-x').style.display=val?'block':'none';
+  document.getElementById('srch-x2').style.display=val?'block':'none';
+  if(!val){curSearchWords=null;document.getElementById('srch-hdr').style.display='none';return}
+  const words=nd(val).trim().split(/\s+/).filter(Boolean);
+  curSearchWords=words;
+  const scored=notes.map(n=>({n,s:scoreNote(n,words)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
+  const hdr=document.getElementById('srch-hdr');
+  hdr.style.display='block';hdr.textContent=`Tìm thấy ${scored.length} kết quả`;
+  // store for when we go back
+}
+function clearSearch2(){document.getElementById('srch2').value='';document.getElementById('srch-x2').style.display='none';syncSearch('')}
+
+// ── LIST ──────────────────────────────────────────────────────────────────
+function renderList(words,results){
+  const el=document.getElementById('listnote');
+  let list=results?[...results]:[...notes].sort((a,b)=>b.updatedAt-a.updatedAt);
+  if(!results&&!showAll)list=list.slice(0,20);
+  let html='';
+  if(!list.length){html='<div class="empty"><div class="eico">📝</div><div>Chưa có ghi chú nào</div></div>'}
+  else{
+    for(const n of list){
+      const fromSearch=!!results;
+      const title=fromSearch?hlText(n.title||'',words):esc(n.title||'');
+      const content=fromSearch?hlText(n.content||'',words):esc(n.content||'');
+      html+=`<div class="ncard" onclick="openDetail('${n.id}',${fromSearch})">
+        ${n.img?`<img class="nthumb" src="${n.img}">`:''}
+        <div class="nbody">
+          <div class="ntitle">${title||'<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
+          <div class="ncontent">${content}</div>
+          <div class="ntime">${fmt(n.updatedAt)}</div>
+        </div></div>`
+    }
+    if(!results){
+      if(!showAll&&notes.length>20){html+=`<div class="view-all"><span onclick="loadAll()">Xem tất cả ${notes.length} ghi chú</span></div>`}
+      else if(showAll&&notes.length>20){html+=`<div class="view-all"><span onclick="showLess()">Thu gọn</span></div>`}
+    }
+  }
+  el.innerHTML=html;
+}
+function loadAll(){showAll=true;if(curSearchWords){doSearch()}else renderList()}
+function showLess(){showAll=false;if(curSearchWords){doSearch()}else renderList()}
+
+// ── DETAIL ────────────────────────────────────────────────────────────────
+let fromSearch=false;
+function openDetail(id,isSearch){
+  curNote=notes.find(n=>n.id===id);if(!curNote)return;
+  fromSearch=!!isSearch;
+  document.getElementById('d-title').value=curNote.title||'';
+  document.getElementById('d-content').value=curNote.content||'';
+  document.getElementById('dx-t').style.display=curNote.title?'block':'none';
+  document.getElementById('d-time').textContent=fmt(curNote.updatedAt);
+  // sync search box in detail header
+  const q=document.getElementById('srch').value;
+  document.getElementById('srch2').value=q;
+  document.getElementById('srch-x2').style.display=q?'block':'none';
+  setThumb(curNote.img);
+  showView('detail-view');
+}
+function setThumb(src){const img=document.getElementById('dthumb-img'),ph=document.getElementById('dthumb-ph');if(src){img.src=src;img.style.display='block';ph.style.display='none'}else{img.style.display='none';ph.style.display='flex'}}
+function onThumbClick(){curNote&&curNote.img?openLb(curNote.img):triggerImg('detail')}
+async function saveDetail(){curNote.title=document.getElementById('d-title').value.trim();curNote.content=document.getElementById('d-content').value.trim();curNote.updatedAt=Date.now();await dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);document.getElementById('d-time').textContent=fmt(curNote.updatedAt);toast('Đã lưu ✓')}
+function copyDetail(){const t=document.getElementById('d-title').value,c=document.getElementById('d-content').value;navigator.clipboard.writeText((t?t+'\n':'')+c).then(()=>toast('Đã copy ✓')).catch(()=>toast('Copy thất bại'))}
+async function deleteNote(){if(!confirm('Xóa note này?'))return;await dbDel('notes',curNote.id);const tr={...curNote,deletedAt:Date.now()};await dbPut('trash',tr);notes=notes.filter(n=>n.id!==curNote.id);trash.push(tr);toast('Đã xóa');goHome()}
+function backDetail(){
+  showView('main-view');
+  if(fromSearch&&curSearchWords){
+    // restore search results
+    const q=document.getElementById('srch').value;
+    if(q)doSearch();
+  } else {
+    renderList();
+  }
+}
+
+// ── TRASH ─────────────────────────────────────────────────────────────────
+function renderTrash(){
+  const el=document.getElementById('tlist');
+  if(!trash.length){el.innerHTML='<div class="empty"><div class="eico">🗑️</div><div>Thùng rác trống</div></div>';return}
+  let html='';
+  for(const n of [...trash].sort((a,b)=>b.deletedAt-a.deletedAt)){
+    html+=`<div class="tcard"><div class="tcbody"><div class="tctitle">${esc(n.title||'Không tiêu đề')}</div><div class="tccontent">${esc(n.content||'')}</div></div><div class="tcbtns"><button class="brest" onclick="restoreNote('${n.id}')">Restore</button><button class="bdel" onclick="permDel('${n.id}')">Delete</button></div></div>`
+  }
+  el.innerHTML=html;
+}
+async function restoreNote(id){const n=trash.find(t=>t.id===id);if(!n)return;await dbDel('trash',id);const restored={...n};delete restored.deletedAt;restored.updatedAt=Date.now();await dbPut('notes',restored);notes.unshift(restored);trash=trash.filter(t=>t.id!==id);renderTrash();toast('Đã khôi phục ✓')}
+async function permDel(id){await dbDel('trash',id);trash=trash.filter(t=>t.id!==id);renderTrash();toast('Đã xóa vĩnh viễn')}
+async function delAllTrash(){if(!trash.length){toast('Thùng rác đã trống');return}if(!confirm(`Xóa vĩnh viễn ${trash.length} note?`))return;await dbClear('trash');trash=[];renderTrash();toast('Đã xóa tất cả')}
+
+// ── IMAGE ─────────────────────────────────────────────────────────────────
+function triggerImg(ctx){imgCtx=ctx;document.getElementById('add-img').click()}
+function resizeImg(file,cb){const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const mw=1000,scale=img.width>mw?mw/img.width:1,w=Math.round(img.width*scale),h=Math.round(img.height*scale),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);c.toBlob(b=>cb(b),'image/jpeg',.7);URL.revokeObjectURL(url)};img.src=url}
+function handleAddImg(e){const f=e.target.files[0];e.target.value='';if(!f)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{if(imgCtx==='main'){quickImg=ev.target.result;toast('Đã thêm ảnh ✓')}else if(imgCtx==='detail'&&curNote){curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thêm ảnh ✓')}};r.readAsDataURL(blob)})}
+document.getElementById('rep-img').addEventListener('change',function(e){const f=e.target.files[0];e.target.value='';if(!f||!curNote)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thay ảnh ✓')};r.readAsDataURL(blob)})});
+
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────
+let lbScale=1,lbX=0,lbY=0,lbActive=false;
+let ptStart={},ptDist=0,panSX=0,panSY=0;
+
+function openLb(src){
+  lbScale=1;lbX=0;lbY=0;
+  const img=document.getElementById('lb-img');
+  img.src=src;
+  applyLbTransform();
+  document.getElementById('lb').classList.add('open');
+  lbActive=true;
+  setupLbTouch();
+}
+function closeLb(){document.getElementById('lb').classList.remove('open');lbActive=false}
+function applyLbTransform(){document.getElementById('lb-img').style.transform=`translate(${lbX}px,${lbY}px) scale(${lbScale})`}
+
+function setupLbTouch(){
+  const wrap=document.getElementById('lb-wrap');
+  wrap.ontouchstart=e=>{
+    if(e.touches.length===1){
+      ptStart={x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()};
+      panSX=lbX;panSY=lbY;
+    } else if(e.touches.length===2){
+      ptDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    }
+    e.preventDefault();
+  };
+  wrap.ontouchmove=e=>{
+    if(e.touches.length===1&&lbScale>1){
+      lbX=panSX+(e.touches[0].clientX-ptStart.x);
+      lbY=panSY+(e.touches[0].clientY-ptStart.y);
+      applyLbTransform();
+    } else if(e.touches.length===2){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      lbScale=Math.min(4,Math.max(1,lbScale*(d/ptDist)));
+      ptDist=d;
+      if(lbScale===1){lbX=0;lbY=0}
+      applyLbTransform();
+    }
+    e.preventDefault();
+  };
+  wrap.ontouchend=e=>{
+    if(e.changedTouches.length===1&&e.touches.length===0){
+      const dx=Math.abs(e.changedTouches[0].clientX-ptStart.x),dy=Math.abs(e.changedTouches[0].clientY-ptStart.y),dt=Date.now()-ptStart.t;
+      if(dx<8&&dy<8&&dt<300){// tap
+        if(lbScale>1){lbScale=1;lbX=0;lbY=0}else{lbScale=2.5}
+        applyLbTransform();
+      }
+    }
+  };
+  // click fallback for desktop
+  wrap.onclick=null;
+}
+
+async function lbCopy(){
+  const img=document.getElementById('lb-img');
+  try{
+    const res=await fetch(img.src);
+    const blob=await res.blob();
+    // Convert to PNG for clipboard compatibility
+    const bmp=await createImageBitmap(blob);
+    const c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;
+    c.getContext('2d').drawImage(bmp,0,0);
+    c.toBlob(async pngBlob=>{
+      try{
+        await navigator.clipboard.write([new ClipboardItem({'image/png':pngBlob})]);
+        toast('Đã copy ảnh vào clipboard ✓');
+      }catch{toast('Trình duyệt chưa hỗ trợ copy ảnh')}
+    },'image/png');
+  }catch{toast('Không thể copy ảnh')}
+}
+function lbDownload(){const a=document.createElement('a');a.href=document.getElementById('lb-img').src;a.download='lufast-'+Date.now()+'.jpg';a.click();toast('Đang tải ảnh...')}
+function lbReplace(){closeLb();document.getElementById('rep-img').click()}
+function lbDelete(){if(!curNote||!confirm('Xóa ảnh này?'))return;curNote.img=null;setThumb(null);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);closeLb();toast('Đã xóa ảnh')}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────
+const EK='LuFast2025!';
+function xEnc(s){let r='';for(let i=0;i<s.length;i++)r+=String.fromCharCode(s.charCodeAt(i)^EK.charCodeAt(i%EK.length));return btoa(unescape(encodeURIComponent(r)))}
+function xDec(s){const d=decodeURIComponent(escape(atob(s)));let r='';for(let i=0;i<d.length;i++)r+=String.fromCharCode(d.charCodeAt(i)^EK.charCodeAt(i%EK.length));return r}
+
+async function exportNotes(){
+  closeDd();closeDd2();
+  const all=await dbAll('notes');
+  const encoded=xEnc(JSON.stringify({v:1,notes:all,exportedAt:Date.now()}));
+  const blob=new Blob([encoded],{type:'application/octet-stream'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='lufast-'+new Date().toISOString().slice(0,10)+'.lufast';a.click();
+  toast(`Đã export ${all.length} note`);
+}
+async function importNotes(e){
+  const file=e.target.files[0];e.target.value='';if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try{
+      const data=JSON.parse(xDec(ev.target.result));
+      if(!data.notes)throw 0;
+      let added=0,updated=0;
+      for(const n of data.notes){
+        const ex=notes.find(x=>x.id===n.id);
+        if(!ex){await dbPut('notes',n);notes.push(n);added++}
+        else if(n.updatedAt>ex.updatedAt){await dbPut('notes',n);notes=notes.map(x=>x.id===n.id?n:x);updated++}
+      }
+      notes.sort((a,b)=>b.updatedAt-a.updatedAt);
+      renderList();toast(`Import: +${added} mới, ${updated} cập nhật`);
+    }catch{toast('File không hợp lệ')}
+  };
+  reader.readAsText(file);
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────────────
+async function saveShare(){
+  const t=document.getElementById('sh-t').value.trim(),c=document.getElementById('sh-c').value.trim();
+  if(!t&&!c){toast('Không có nội dung');return}
+  const n={id:uid(),title:t,content:c,img:null,createdAt:Date.now(),updatedAt:Date.now()};
+  await dbPut('notes',n);notes.unshift(n);
+  toast('Đã lưu ✓');
+  setTimeout(()=>window.close&&window.close(),800);
+}
+function handleShared(title,text,url){
+  const sv=document.getElementById('share-view');
+  sv.classList.add('active');
+  document.getElementById('sh-t').value=title||'';
+  document.getElementById('sh-c').value=[text,url].filter(Boolean).join('\n');
+  chkX('sh-t','shx-t');
+}
+if('launchQueue' in window){window.launchQueue.setConsumer(async lc=>{if(!lc.targetURL)return;const u=new URL(lc.targetURL);handleShared(u.searchParams.get('title')||'',u.searchParams.get('text')||'',u.searchParams.get('url')||'')})}
+(()=>{const p=new URLSearchParams(location.search);if(p.has('text')||p.has('url'))handleShared(p.get('title')||'',p.get('text')||'',p.get('url')||'')})();
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function init(){
+  await openDB();
+  [notes,trash]=await Promise.all([dbAll('notes'),dbAll('trash')]);
+  notes.sort((a,b)=>b.updatedAt-a.updatedAt);
+  trash.sort((a,b)=>b.deletedAt-a.deletedAt);
+  renderList();
+}
+init();
+
+</script>
+</body>
+</html>
