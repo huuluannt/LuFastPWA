@@ -127,7 +127,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
       <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
     </div>
     <button class="btn-more" onclick="toggleDd()">⋯</button>
-    <div class="ddmenu" id="dd">
+    <div class="ddmenu" id="dd" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
       <button onclick="exportNotes()">📤 Export</button>
       <button onclick="closeDd();document.getElementById('imp-file').click()">📥 Import</button>
       <button onclick="closeDd();openTrash()">🗑️ Trash</button>
