@@ -1,48 +1,32 @@
-const CACHE_NAME = 'lufast-v1';
-const urlsToCache = [
-  '/',
-  '/share',
-  '/lufast2.html',
-  '/manifest.json'
-];
+const CACHE = 'lufast-v2';
+const PRECACHE = ['/', '/manifest.json'];
 
-// Install event
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(PRECACHE))
   );
   self.skipWaiting();
 });
 
-// Activate event
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => clients.claim())
   );
-  event.waitUntil(clients.claim());
 });
 
-// Fetch event
-self.addEventListener('fetch', event => {
-  // Handle share target - just let the normal request through
-  // The share parameters will be handled by the client-side JavaScript
+self.addEventListener('fetch', e => {
+  // Share target: GET request với params → trả về trang chính
+  const url = new URL(e.request.url);
+  if (e.request.method === 'GET' && (url.searchParams.has('text') || url.searchParams.has('url'))) {
+    // Để client-side JS xử lý params, chỉ cần serve trang chính
+    e.respondWith(caches.match('/').then(r => r || fetch('/')));
+    return;
+  }
 
-  // Network first, then cache
-  event.respondWith(
-    fetch(event.request)
-      .catch(() => {
-        return caches.match(event.request);
-      })
+  // Network first, fallback cache
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
   );
 });
