@@ -199,7 +199,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch" placeholder="Tìm ghi chú…" autocomplete="off"
+      <input type="search" id="srch" placeholder="Tìm ghi chú…v15" autocomplete="off"
         oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
     </div>
@@ -240,7 +240,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome()">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch2" placeholder="Tìm ghi chú…v14" autocomplete="off"
+      <input type="search" id="srch2" placeholder="Tìm ghi chú…v15" autocomplete="off"
         oninput="syncSearch(this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x2" onclick="clearSearch2()">×</button>
     </div>
@@ -372,13 +372,6 @@ if('serviceWorker' in navigator){
   });
 }
 
-// Listen for messages from service worker
-navigator.serviceWorker.addEventListener('message', e => {
-  if (e.data && e.data.type === 'LUFAST_FRESH_SHARE') {
-    // SW báo hiệu đây là share thật → set cờ để fallback URL handler biết
-    sessionStorage.setItem('lufast_fresh_share', '1');
-  }
-});
 
 // ── DB ────────────────────────────────────────────────────────────────────
 let db;
@@ -1077,46 +1070,7 @@ function handleShared(title, text, url) {
   }, 200);
 }
 
-// Nhận share từ LaunchQueue (PWA Share Target API)
-if ('launchQueue' in window) {
-  window.launchQueue.setConsumer(async lc => {
-    if (!lc.targetURL) return;
-    const u = new URL(lc.targetURL);
-    handleShared(
-      u.searchParams.get('title') || '',
-      u.searchParams.get('text')  || '',
-      u.searchParams.get('url')   || ''
-    );
-  });
-}
 
-(() => {
-  const p = new URLSearchParams(location.search);
-  const hasShareParams = p.has('text') || p.has('url');
-
-  if (!hasShareParams) return;
-
-  // Kiểm tra: SW có vừa redirect tới đây không?
-  // SW sẽ set cờ này vào sessionStorage trước khi redirect
-  const freshShare = sessionStorage.getItem('lufast_fresh_share');
-
-  if (!freshShare) {
-    // Không có cờ → đây là Windows PWA mở lại URL cũ → bỏ qua
-    history.replaceState({}, '', '/');
-    return;
-  }
-
-  // Có cờ → share thật, xóa cờ và xử lý
-  sessionStorage.removeItem('lufast_fresh_share');
-
-  handleShared(
-    p.get('title') || '',
-    p.get('text')  || '',
-    p.get('url')   || ''
-  );
-
-  history.replaceState({}, '', '/');
-})();
 
 // ── ANDROID BACK BUTTON (hardware/gesture) ────────────────────────────────
 // Đẩy 1 state vào history khi app load để có thể bắt sự kiện popstate
@@ -1164,6 +1118,29 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
+// ── CHECK SHARE INBOX ─────────────────────────────────────────────────────
+async function checkShareInbox() {
+  try {
+    const inbox = await caches.open('lufast-share-inbox');
+    const res = await inbox.match('/share-inbox');
+    if (!res) return;
+
+    const data = await res.json();
+
+    // Xóa khỏi hộp thư ngay để không đọc lại lần sau
+    await inbox.delete('/share-inbox');
+
+    // Chỉ xử lý nếu share data còn mới (trong vòng 5 phút)
+    // → Phòng trường hợp cực hiếm: SW lưu nhưng app crash chưa đọc
+    const age = Date.now() - (data.ts || 0);
+    if (age > 5 * 60 * 1000) return;
+
+    handleShared(data.title, data.text, data.url);
+  } catch (e) {
+    // Cache API không khả dụng → bỏ qua
+  }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init(){
   await openDB();
@@ -1172,6 +1149,7 @@ async function init(){
   trash.sort((a,b)=>b.deletedAt-a.deletedAt);
   await purgeExpiredTrash();
   renderList();
+  await checkShareInbox(); // đọc hộp thư share sau khi app đã sẵn sàng
 }
 init();
 
