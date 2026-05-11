@@ -135,9 +135,27 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 #lb-acts{display:flex;gap:8px;padding:14px 12px;flex-shrink:0;justify-content:center;flex-wrap:wrap}
 #lb-acts button{padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
 /* SHARE */
-#share-view{display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:20px}
-#share-view.active{display:flex}
-.share-title{font-size:18px;font-weight:700;margin-bottom:16px}
+#share-view {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 500;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#share-view.active { display: flex; }
+/* Header nhỏ phía trên quicknote trong share view */
+#share-view::before {
+  content: '⚡ LuFast — Lưu nhanh';
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  letter-spacing: -.3px;
+}
 /* UNSAVED CHANGES POPUP */
 #unsaved-popup{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 #unsaved-popup.active{display:flex}
@@ -272,20 +290,27 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 
 <!-- SHARE VIEW -->
 <div id="share-view">
-  <div class="share-title">⚡ LuFast — Lưu nhanh</div>
-  <div style="width:100%;max-width:420px">
-    <div class="inp-wrap" style="margin-bottom:8px">
-      <input type="text" id="sh-t" placeholder="Tiêu đề…" style="width:100%;padding:8px 26px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none" oninput="chkX('sh-t','shx-t')">
-      <button class="ix" id="shx-t" onclick="clrInp('sh-t','shx-t')">×</button>
+  <!-- Chỉ có QuickNote, giống y chang main view -->
+  <div class="qnote" style="width:100%;max-width:480px;border:none">
+    <div class="qn-r1">
+      <div class="qthumb-box" id="sq-thumb" onclick="onSQThumbClick()">
+        <div class="qthumb-ph" id="sq-thumb-ph">📷</div>
+        <img id="sq-thumb-img">
+      </div>
+      <div class="inp-wrap">
+        <textarea id="sh-t" placeholder="Tiêu đề…" oninput="chkX('sh-t','shx-t')" rows="1"></textarea>
+        <button class="ix" id="shx-t" onclick="clrInp('sh-t','shx-t')">×</button>
+      </div>
     </div>
     <div class="qn-r2">
-      <textarea class="qn-ta" id="sh-c" placeholder="Nội dung được share…" style="min-height:100px"></textarea>
+      <textarea class="qn-ta" id="sh-c" placeholder="Nội dung…" rows="3"
+        onclick="focusShareLine2(event)"
+        onfocus="focusShareLine2(event)"></textarea>
       <div class="qbtns">
-        <button onclick="document.getElementById('sh-c').value='';document.getElementById('sh-t').value='';document.getElementById('shx-t').style.display='none'">Clear</button>
+        <button onclick="clearShare()">Clear</button>
         <button class="bsave" onclick="saveShare()">Save</button>
       </div>
     </div>
-    <div style="margin-top:8px;font-size:12px;color:var(--text3);text-align:center">Save xong sẽ tự đóng</div>
   </div>
 </div>
 
@@ -719,7 +744,7 @@ async function delAllTrash(){if(!trash.length){toast('Thùng rác đã trống')
 // ── IMAGE ─────────────────────────────────────────────────────────────────
 function triggerImg(ctx){imgCtx=ctx;document.getElementById('add-img').click()}
 function resizeImg(file,cb){const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const mw=1000,scale=img.width>mw?mw/img.width:1,w=Math.round(img.width*scale),h=Math.round(img.height*scale),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);c.toBlob(b=>cb(b),'image/jpeg',.7);URL.revokeObjectURL(url)};img.src=url}
-function handleAddImg(e){const f=e.target.files[0];e.target.value='';if(!f)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{if(imgCtx==='main'){quickImg=ev.target.result;setQThumb(quickImg);toast('Đã thêm ảnh ✓')}else if(imgCtx==='detail'&&curNote){curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thêm ảnh ✓')}};r.readAsDataURL(blob)})}
+function handleAddImg(e){const f=e.target.files[0];e.target.value='';if(!f)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{if(imgCtx==='main'){quickImg=ev.target.result;setQThumb(quickImg);toast('Đã thêm ảnh ✓')}else if(imgCtx==='share'){shareImgData=ev.target.result;setSQThumb(shareImgData);toast('Đã thêm ảnh ✓')}else if(imgCtx==='detail'&&curNote){curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thêm ảnh ✓')}};r.readAsDataURL(blob)})}
 document.getElementById('rep-img').addEventListener('change',function(e){const f=e.target.files[0];e.target.value='';if(!f||!curNote)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thay ảnh ✓')};r.readAsDataURL(blob)})});
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────
@@ -832,23 +857,137 @@ async function importNotes(e){
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────────────
-async function saveShare(){
-  const t=document.getElementById('sh-t').value.trim(),c=document.getElementById('sh-c').value.trim();
-  if(!t&&!c){toast('Không có nội dung');return}
-  const n={id:uid(),title:t,content:c,img:null,createdAt:Date.now(),updatedAt:Date.now()};
-  await dbPut('notes',n);notes.unshift(n);
+let shareImgData = null;
+
+function fmtShareTitle() {
+  const d = new Date();
+  const yy = String(d.getFullYear()).slice(2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `LuFast ${yy}${mm}${dd} ${hh}:${mi}`;
+}
+
+function setSQThumb(src) {
+  const img = document.getElementById('sq-thumb-img');
+  const ph  = document.getElementById('sq-thumb-ph');
+  if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none'; }
+  else      { img.style.display = 'none'; ph.style.display = 'flex'; }
+}
+function onSQThumbClick() {
+  if (shareImgData) openLb(shareImgData);
+  else { imgCtx = 'share'; document.getElementById('add-img').click(); }
+}
+
+// Khi click/focus vào ô content → đặt cursor ở đầu dòng 2
+function focusShareLine2(e) {
+  const ta = document.getElementById('sh-c');
+  const val = ta.value;
+  const newlineIdx = val.indexOf('\n');
+  // Chỉ nhảy nếu có dòng 2 (tức đã có link ở dòng 1)
+  if (newlineIdx !== -1) {
+    const pos = newlineIdx + 1;
+    // Dùng setTimeout để tránh bị ghi đè bởi sự kiện focus mặc định
+    setTimeout(() => { ta.setSelectionRange(pos, pos); }, 0);
+  }
+}
+
+function clearShare() {
+  document.getElementById('sh-t').value = '';
+  document.getElementById('sh-c').value = '';
+  document.getElementById('shx-t').style.display = 'none';
+  shareImgData = null;
+  setSQThumb(null);
+}
+
+async function saveShare() {
+  const t = document.getElementById('sh-t').value.trim();
+  const c = document.getElementById('sh-c').value.trim();
+  if (!t && !c && !shareImgData) { toast('Không có nội dung'); return; }
+
+  const n = {
+    id: uid(),
+    title: t,
+    content: c,
+    img: shareImgData || null,
+    pinned: false,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+  await dbPut('notes', n);
+  notes.unshift(n);
   toast('Đã lưu ✓');
-  setTimeout(()=>window.close&&window.close(),800);
+
+  // Quay lại màn hình trước (mạng xã hội) ngay lập tức
+  setTimeout(() => {
+    if (document.referrer) {
+      window.location.href = document.referrer;
+    } else {
+      // Fallback: nếu không có referrer thì đóng tab/window
+      window.close();
+      // Nếu close() không được (PWA), ẩn share view và về home
+      setTimeout(() => {
+        document.getElementById('share-view').classList.remove('active');
+        showView('main-view');
+        renderList();
+      }, 300);
+    }
+  }, 500); // 500ms để toast hiện trước khi chuyển
 }
-function handleShared(title,text,url){
-  const sv=document.getElementById('share-view');
+
+function handleShared(title, text, url) {
+  const sv = document.getElementById('share-view');
   sv.classList.add('active');
-  document.getElementById('sh-t').value=title||'';
-  document.getElementById('sh-c').value=[text,url].filter(Boolean).join('\n');
-  chkX('sh-t','shx-t');
+
+  // Title mặc định: "LuFast yymmdd hh:mm"
+  document.getElementById('sh-t').value = fmtShareTitle();
+  chkX('sh-t', 'shx-t');
+
+  // Dòng 1 = link share, dòng 2 = trống để user gõ
+  const link = url || text || '';
+  document.getElementById('sh-c').value = link ? (link + '\n') : '';
+
+  shareImgData = null;
+  setSQThumb(null);
+
+  // Focus vào đầu dòng 2 sau khi render xong
+  setTimeout(() => {
+    const ta = document.getElementById('sh-c');
+    ta.focus();
+    if (link) {
+      const pos = link.length + 1; // sau ký tự '\n'
+      ta.setSelectionRange(pos, pos);
+    }
+  }, 200);
 }
-if('launchQueue' in window){window.launchQueue.setConsumer(async lc=>{if(!lc.targetURL)return;const u=new URL(lc.targetURL);handleShared(u.searchParams.get('title')||'',u.searchParams.get('text')||'',u.searchParams.get('url')||'')})}
-(()=>{const p=new URLSearchParams(location.search);if(location.pathname==='/share'||location.pathname.endsWith('/share')){if(p.has('text')||p.has('url'))handleShared(p.get('title')||'',p.get('text')||'',p.get('url')||'')}else if(p.get('share')==='true'&&(p.has('text')||p.has('url'))){handleShared(p.get('title')||'',p.get('text')||'',p.get('url')||'')}})();
+
+// Nhận share từ LaunchQueue (PWA Share Target API)
+if ('launchQueue' in window) {
+  window.launchQueue.setConsumer(async lc => {
+    if (!lc.targetURL) return;
+    const u = new URL(lc.targetURL);
+    handleShared(
+      u.searchParams.get('title') || '',
+      u.searchParams.get('text')  || '',
+      u.searchParams.get('url')   || ''
+    );
+  });
+}
+
+// Fallback: nhận từ URL params (khi SW redirect về /?text=...&url=...)
+(() => {
+  const p = new URLSearchParams(location.search);
+  if (p.has('text') || p.has('url')) {
+    handleShared(
+      p.get('title') || '',
+      p.get('text')  || '',
+      p.get('url')   || ''
+    );
+    // Xóa params khỏi URL để không trigger lại khi reload
+    history.replaceState({}, '', '/');
+  }
+})();
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init(){
