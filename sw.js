@@ -34,19 +34,8 @@ self.addEventListener('activate', event => {
 
 // Fetch event
 self.addEventListener('fetch', event => {
-  // Handle share target
-  if (event.request.method === 'POST' && event.request.url.includes('share')) {
-    event.respondWith((async () => {
-      const formData = await event.request.formData();
-      const params = new URLSearchParams({
-        title: formData.get('title') || '',
-        text: formData.get('text') || '',
-        url: formData.get('url') || ''
-      });
-      return Response.redirect('/?' + params.toString(), 303);
-    })());
-    return;
-  }
+  // Handle share target - just let the normal request through
+  // The share parameters will be handled by the client-side JavaScript
 
   // Network first, then cache
   event.respondWith(

@@ -9,8 +9,8 @@
   "orientation": "portrait",
   "scope": "/",
   "share_target": {
-    "action": "/",
-    "method": "POST",
+    "action": "/?share=true",
+    "method": "GET",
     "params": {
       "title": "title",
       "text": "text",
