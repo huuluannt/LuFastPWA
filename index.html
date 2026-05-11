@@ -240,7 +240,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome()">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch2" placeholder="Tìm ghi chú…" autocomplete="off"
+      <input type="search" id="srch2" placeholder="Tìm ghi chú…v14" autocomplete="off"
         oninput="syncSearch(this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x2" onclick="clearSearch2()">×</button>
     </div>
@@ -381,7 +381,18 @@ function dbDel(s,id){return new Promise((res,rej)=>{const r=db.transaction(s,'re
 function dbClear(s){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).clear();r.onsuccess=()=>res();r.onerror=()=>rej()})}
 
 // ── STATE ─────────────────────────────────────────────────────────────────
+const TRASH_TTL = 30 * 24 * 60 * 60 * 1000;
 let notes=[],trash=[],curNote=null,showAll=false,curSearchWords=null,imgCtx=null,quickImg=null,originalNote=null;
+
+async function purgeExpiredTrash() {
+  const now = Date.now();
+  const expired = trash.filter(n => (now - n.deletedAt) >= TRASH_TTL);
+  if (!expired.length) return;
+  for (const n of expired) {
+    await dbDel('trash', n.id);
+  }
+  trash = trash.filter(n => (now - n.deletedAt) < TRASH_TTL);
+}
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
 function toast(msg,dur=2200){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.getElementById('toast-wrap').appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},dur)}
@@ -593,24 +604,30 @@ function showUnsavedPopup(){document.getElementById('unsaved-popup').classList.a
 function hideUnsavedPopup(){document.getElementById('unsaved-popup').classList.remove('active')}
 async function saveAndBack(){hideUnsavedPopup();await saveDetail();backDetail()}
 async function saveAndFocusQuick(){hideUnsavedPopup();await saveDetail();goHome();setTimeout(()=>document.getElementById('qn-content').focus(),100)}
-function discardAndBack(){
+function discardAndBack() {
   hideUnsavedPopup();
-  curNote={...originalNote};
-  // Restore form values to match original note
-  document.getElementById('d-title').value=curNote.title||'';
-  document.getElementById('d-content').value=curNote.content||'';
-  document.getElementById('dx-t').style.display=curNote.title?'block':'none';
-  // Go back directly without checking unsaved changes again
+  curNote = { ...originalNote };
+  document.getElementById('d-title').value   = curNote.title   || '';
+  document.getElementById('d-content').value = curNote.content || '';
+  document.getElementById('dx-t').style.display = curNote.title ? 'block' : 'none';
+  setThumb(curNote.img);
+  notes = notes.map(n => n.id === curNote.id ? curNote : n);
   showView('main-view');
-  if(fromSearch&&curSearchWords){
-    // restore search results
-    const q=document.getElementById('srch').value;
-    if(q)doSearch();
+  if (fromSearch && curSearchWords) {
+    const q = document.getElementById('srch').value;
+    if (q) doSearch();
   } else {
     renderList();
   }
 }
-function discardAndFocusQuick(){hideUnsavedPopup();curNote={...originalNote};goHome();setTimeout(()=>document.getElementById('qn-content').focus(),100)}
+function discardAndFocusQuick() {
+  hideUnsavedPopup();
+  curNote = { ...originalNote };
+  setThumb(curNote.img);
+  notes = notes.map(n => n.id === curNote.id ? curNote : n);
+  goHome();
+  setTimeout(() => document.getElementById('qn-content').focus(), 100);
+}
 function cancelBack(){hideUnsavedPopup()}
 function handleSave(){
   // Check if called from FAB or Back
@@ -714,7 +731,16 @@ async function deleteFromList(noteId, event){
   renderList();
   toast('Đã xóa');
 }
-async function saveDetail(){curNote.title=document.getElementById('d-title').value.trim();curNote.content=document.getElementById('d-content').value.trim();curNote.updatedAt=Date.now();await dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);originalNote={...curNote};document.getElementById('d-time').textContent=fmt(curNote.updatedAt);toast('Đã lưu ✓')}
+async function saveDetail() {
+  curNote.title   = document.getElementById('d-title').value.trim();
+  curNote.content = document.getElementById('d-content').value.trim();
+  curNote.updatedAt = Date.now();
+  await dbPut('notes', curNote);
+  notes = notes.map(n => n.id === curNote.id ? curNote : n);
+  originalNote = { ...curNote };
+  document.getElementById('d-time').textContent = fmt(curNote.updatedAt);
+  toast('Đã lưu ✓');
+}
 function copyDetail(){const t=document.getElementById('d-title').value,c=document.getElementById('d-content').value;navigator.clipboard.writeText((t?t+'\n':'')+c).then(()=>toast('Đã copy ✓')).catch(()=>toast('Copy thất bại'))}
 function copyFirstLine() {
   const c = document.getElementById('d-content').value;
@@ -742,14 +768,32 @@ function backDetail(){
 }
 
 // ── TRASH ─────────────────────────────────────────────────────────────────
-function renderTrash(){
-  const el=document.getElementById('tlist');
-  if(!trash.length){el.innerHTML='<div class="empty"><div class="eico">🗑️</div><div>Thùng rác trống</div></div>';return}
-  let html='';
-  for(const n of [...trash].sort((a,b)=>b.deletedAt-a.deletedAt)){
-    html+=`<div class="tcard"><div class="tcbody"><div class="tctitle">${linkify(esc(n.title||'Không tiêu đề'))}</div><div class="tccontent">${linkify(esc(n.content||''))}</div></div><div class="tcbtns"><button class="brest" onclick="restoreNote('${n.id}')">Restore</button><button class="bdel" onclick="permDel('${n.id}')">Delete</button></div></div>`
+function renderTrash() {
+  const el = document.getElementById('tlist');
+  if (!trash.length) {
+    el.innerHTML = '<div class="empty"><div class="eico">🗑️</div><div>Thùng rác trống</div></div>';
+    return;
   }
-  el.innerHTML=html;
+  const now = Date.now();
+  let html = '';
+  for (const n of [...trash].sort((a, b) => b.deletedAt - a.deletedAt)) {
+    const daysLeft = Math.ceil((TRASH_TTL - (now - n.deletedAt)) / 86400000);
+    const expireBadge = daysLeft <= 3
+      ? `<span style="color:var(--danger);font-size:11px;font-weight:600">⚠️ còn ${daysLeft} ngày</span>` 
+      : `<span style="color:var(--text3);font-size:11px">còn ${daysLeft} ngày</span>`;
+    html += `<div class="tcard">
+      <div class="tcbody">
+        <div class="tctitle">${esc(n.title || 'Không tiêu đề')}</div>
+        <div class="tccontent">${esc(n.content || '')}</div>
+        <div style="margin-top:4px">${expireBadge}</div>
+      </div>
+      <div class="tcbtns">
+        <button class="brest" onclick="restoreNote('${n.id}')">Restore</button>
+        <button class="bdel" onclick="permDel('${n.id}')">Delete</button>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
 }
 async function restoreNote(id){const n=trash.find(t=>t.id===id);if(!n)return;await dbDel('trash',id);const restored={...n};delete restored.deletedAt;restored.updatedAt=Date.now();await dbPut('notes',restored);notes.unshift(restored);trash=trash.filter(t=>t.id!==id);renderTrash();toast('Đã khôi phục ✓')}
 async function permDel(id){await dbDel('trash',id);trash=trash.filter(t=>t.id!==id);renderTrash();toast('Đã xóa vĩnh viễn')}
@@ -758,8 +802,42 @@ async function delAllTrash(){if(!trash.length){toast('Thùng rác đã trống')
 // ── IMAGE ─────────────────────────────────────────────────────────────────
 function triggerImg(ctx){imgCtx=ctx;document.getElementById('add-img').click()}
 function resizeImg(file,cb){const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const mw=1000,scale=img.width>mw?mw/img.width:1,w=Math.round(img.width*scale),h=Math.round(img.height*scale),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);c.toBlob(b=>cb(b),'image/jpeg',.7);URL.revokeObjectURL(url)};img.src=url}
-function handleAddImg(e){const f=e.target.files[0];e.target.value='';if(!f)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{if(imgCtx==='main'){quickImg=ev.target.result;setQThumb(quickImg);toast('Đã thêm ảnh ✓')}else if(imgCtx==='share'){shareImgData=ev.target.result;setSQThumb(shareImgData);toast('Đã thêm ảnh ✓')}else if(imgCtx==='detail'&&curNote){curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thêm ảnh ✓')}};r.readAsDataURL(blob)})}
-document.getElementById('rep-img').addEventListener('change',function(e){const f=e.target.files[0];e.target.value='';if(!f||!curNote)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thay ảnh ✓')};r.readAsDataURL(blob)})});
+function handleAddImg(e) {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  resizeImg(f, blob => {
+    const r = new FileReader();
+    r.onload = ev => {
+      if (imgCtx === 'main') {
+        quickImg = ev.target.result;
+        setQThumb(quickImg);
+        toast('Đã thêm ảnh ✓');
+      } else if (imgCtx === 'share') {
+        shareImgData = ev.target.result;
+        setSQThumb(shareImgData);
+        toast('Đã thêm ảnh ✓');
+      } else if (imgCtx === 'detail' && curNote) {
+        curNote.img = ev.target.result;
+        setThumb(curNote.img);
+        notes = notes.map(n => n.id === curNote.id ? curNote : n);
+        toast('Đã chọn ảnh — nhấn Save để lưu');
+      }
+    };
+    r.readAsDataURL(blob);
+  });
+}
+document.getElementById('rep-img').addEventListener('change', function(e) {
+  const f = e.target.files[0]; e.target.value = ''; if (!f || !curNote) return;
+  resizeImg(f, blob => {
+    const r = new FileReader();
+    r.onload = ev => {
+      curNote.img = ev.target.result;
+      setThumb(curNote.img);
+      notes = notes.map(n => n.id === curNote.id ? curNote : n);
+      toast('Đã chọn ảnh thay thế — nhấn Save để lưu');
+    };
+    r.readAsDataURL(blob);
+  });
+});
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────
 let lbScale=1,lbX=0,lbY=0,lbActive=false;
@@ -834,7 +912,22 @@ async function lbCopy(){
 }
 function lbDownload(){const a=document.createElement('a');a.href=document.getElementById('lb-img').src;a.download='lufast-'+Date.now()+'.jpg';a.click();toast('Đang tải ảnh...')}
 function lbReplace(){closeLb();document.getElementById('rep-img').click()}
-function lbDelete(){if(curNote){if(!confirm('Xóa ảnh này?'))return;curNote.img=null;setThumb(null);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);closeLb();toast('Đã xóa ảnh')}else{if(!confirm('Xóa ảnh này?'))return;quickImg=null;setQThumb(null);closeLb();toast('Đã xóa ảnh')}}
+function lbDelete() {
+  if (curNote) {
+    if (!confirm('Xóa ảnh này?')) return;
+    curNote.img = null;
+    setThumb(null);
+    notes = notes.map(n => n.id === curNote.id ? curNote : n);
+    closeLb();
+    toast('Đã xóa ảnh — nhấn Save để lưu');
+  } else {
+    if (!confirm('Xóa ảnh này?')) return;
+    quickImg = null;
+    setQThumb(null);
+    closeLb();
+    toast('Đã xóa ảnh');
+  }
+}
 
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────
 const EK='LuFast2025!';
@@ -1055,6 +1148,7 @@ async function init(){
   [notes,trash]=await Promise.all([dbAll('notes'),dbAll('trash')]);
   notes.sort((a,b)=>b.updatedAt-a.updatedAt);
   trash.sort((a,b)=>b.deletedAt-a.deletedAt);
+  await purgeExpiredTrash();
   renderList();
 }
 init();
