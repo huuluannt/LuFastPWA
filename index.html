@@ -111,6 +111,11 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 .footer .bsd{background:#111;color:#fff;border-color:#111}
 .footer .bdd{color:var(--danger);border-color:var(--danger)}
 .footer button:active{opacity:.7}
+/* 5 nút footer detail view */
+#detail-view .footer button {
+  font-size: 11.5px;
+  padding: 10px 1px;
+}
 /* TRASH FOOTER */
 .trashfooter{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .trashfooter button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
@@ -267,9 +272,10 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     </div>
   </div>
   <div class="footer">
-    <button class="bsd" onclick="saveDetail()">Save</button>
-    <button onclick="copyDetail()">Copy</button>
+    <button onclick="copyFirstLine()">Copy 1st</button>
+    <button onclick="copyDetail()">Copy All</button>
     <button class="bdd" onclick="deleteNote()">Delete</button>
+    <button class="bsd" onclick="saveDetail()">Save</button>
     <button onclick="backDetail()">Back</button>
   </div>
 </div>
@@ -710,6 +716,14 @@ async function deleteFromList(noteId, event){
 }
 async function saveDetail(){curNote.title=document.getElementById('d-title').value.trim();curNote.content=document.getElementById('d-content').value.trim();curNote.updatedAt=Date.now();await dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);originalNote={...curNote};document.getElementById('d-time').textContent=fmt(curNote.updatedAt);toast('Đã lưu ✓')}
 function copyDetail(){const t=document.getElementById('d-title').value,c=document.getElementById('d-content').value;navigator.clipboard.writeText((t?t+'\n':'')+c).then(()=>toast('Đã copy ✓')).catch(()=>toast('Copy thất bại'))}
+function copyFirstLine() {
+  const c = document.getElementById('d-content').value;
+  const firstLine = c.split('\n')[0].trim();
+  if (!firstLine) { toast('Dòng đầu trống'); return; }
+  navigator.clipboard.writeText(firstLine)
+    .then(() => toast('Đã copy dòng đầu ✓'))
+    .catch(() => toast('Copy thất bại'));
+}
 async function deleteNote(){if(!confirm('Xóa note này?'))return;await dbDel('notes',curNote.id);const tr={...curNote,deletedAt:Date.now()};await dbPut('trash',tr);notes=notes.filter(n=>n.id!==curNote.id);trash.push(tr);toast('Đã xóa');goHome()}
 function backDetail(){
   window.fabContext=false; // Reset FAB context
@@ -988,6 +1002,52 @@ if ('launchQueue' in window) {
     history.replaceState({}, '', '/');
   }
 })();
+
+// ── ANDROID BACK BUTTON (hardware/gesture) ────────────────────────────────
+// Đẩy 1 state vào history khi app load để có thể bắt sự kiện popstate
+history.pushState({ lufast: true }, '');
+
+window.addEventListener('popstate', function(e) {
+  // Luôn đẩy lại state để không bao giờ thoát app bằng back
+  history.pushState({ lufast: true }, '');
+
+  // Lightbox đang mở → đóng lightbox
+  if (document.getElementById('lb').classList.contains('open')) {
+    closeLb(); return;
+  }
+
+  // Unsaved popup đang mở → đóng popup (= hủy)
+  if (document.getElementById('unsaved-popup').classList.contains('active')) {
+    cancelBack(); return;
+  }
+
+  // Search overlay đang mở → đóng overlay
+  if (document.getElementById('search-overlay').classList.contains('active')) {
+    hideSearchOverlay(); return;
+  }
+
+  // Share view đang hiện → không làm gì (để user tự Save/Clear)
+  if (document.getElementById('share-view').classList.contains('active')) {
+    return;
+  }
+
+  // Detail view → hành xử y chang nút Back trong footer
+  if (document.getElementById('detail-view').classList.contains('active')) {
+    backDetail(); return;
+  }
+
+  // Trash view → về home
+  if (document.getElementById('trash-view').classList.contains('active')) {
+    goHome(); return;
+  }
+
+  // Main view đang search → xóa search
+  if (document.getElementById('main-view').classList.contains('active')) {
+    const srch = document.getElementById('srch');
+    if (srch.value) { clearSearch(); return; }
+    // Nếu không có gì để back → không làm gì (giữ app mở)
+  }
+});
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init(){
