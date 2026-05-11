@@ -848,7 +848,7 @@ function handleShared(title,text,url){
   chkX('sh-t','shx-t');
 }
 if('launchQueue' in window){window.launchQueue.setConsumer(async lc=>{if(!lc.targetURL)return;const u=new URL(lc.targetURL);handleShared(u.searchParams.get('title')||'',u.searchParams.get('text')||'',u.searchParams.get('url')||'')})}
-(()=>{const p=new URLSearchParams(location.search);if(p.get('share')==='true'&&(p.has('text')||p.has('url')))handleShared(p.get('title')||'',p.get('text')||'',p.get('url')||'')})();
+(()=>{const p=new URLSearchParams(location.search);if(location.pathname==='/share'||location.pathname.endsWith('/share')){if(p.has('text')||p.has('url'))handleShared(p.get('title')||'',p.get('text')||'',p.get('url')||'')}else if(p.get('share')==='true'&&(p.has('text')||p.has('url'))){handleShared(p.get('title')||'',p.get('text')||'',p.get('url')||'')}})();
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init(){

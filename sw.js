@@ -1,6 +1,7 @@
 const CACHE_NAME = 'lufast-v1';
 const urlsToCache = [
   '/',
+  '/share',
   '/lufast2.html',
   '/manifest.json'
 ];
