@@ -10,7 +10,7 @@
   "scope": "/",
   "share_target": {
     "action": "/",
-    "method": "GET",
+    "method": "POST",
     "params": {
       "title": "title",
       "text": "text",

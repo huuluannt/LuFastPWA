@@ -37,14 +37,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ddmenu button:last-child{border-bottom:none}
 .ddmenu button:active{background:var(--surface)}
 /* OVERLAY */
-#overlay{display:none;position:fixed;inset:0;z-index:100}
+#overlay{display:none;position:fixed;inset:0;z-index:100;pointer-events:none}
 #overlay.on{display:block}
 /* QUICKNOTE */
 .qnote{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .qn-r1{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .btn-img{background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap}
+.qthumb-box{width:55px;height:55px;border-radius:6px;overflow:hidden;flex-shrink:0;cursor:pointer;background:var(--surface);border:1.5px solid var(--border)}
+.qthumb-box img{width:100%;height:100%;object-fit:cover;display:none}
+.qthumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text3)}
 .inp-wrap{flex:1;position:relative}
 .inp-wrap input{width:100%;padding:7px 26px 7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--bg);transition:border .2s}
+.inp-wrap textarea{width:100%;padding:7px 26px 7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--bg);transition:border .2s;resize:none;line-height:1.4;font-family:inherit;overflow-y:auto}
+.qn-r1 .inp-wrap textarea{height:55px}
+.dtc .inp-wrap textarea{height:90px}
 .inp-wrap input:focus{border-color:#bbb}
 .ix{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;display:none;line-height:1;padding:2px}
 .qn-r2{display:flex;gap:8px;align-items:stretch}
@@ -56,13 +62,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .qbtns button:active{opacity:.7}
 /* LIST */
 .listnote{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
-.ncard{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:11px;margin-bottom:8px;cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+.ncard{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:2px;margin-bottom:3px;cursor:pointer;display:flex;gap:8px;align-items:flex-start}
 .ncard:active{box-shadow:var(--shadow)}
-.nthumb{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.nthumb{width:55px;height:55px;border-radius:6px;background-size:cover;background-position:center;flex-shrink:0}
 .nbody{flex:1;min-width:0}
-.ntitle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
-.ncontent{font-size:13px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.ntime{font-size:11px;color:var(--text3);margin-top:4px}
+.ntitle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.ncontent{font-size:13px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.ntime{font-size:11px;color:var(--text3);margin-top:2px}
+.nactions{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.nactions button{width:24px;height:24px;border:none;border-radius:4px;background:var(--surface);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.nactions button:hover{background:var(--border)}
+.nactions button:active{transform:scale(.9)}
+.nactions .btn-pin{color:var(--text2)}
+.nactions .btn-pin.pinned{color:#f39c12}
+.nactions .btn-trash{color:var(--text2)}
+.nactions .btn-trash:hover{color:var(--danger)}
 .view-all{text-align:center;padding:12px;color:var(--text2);font-size:14px}
 .view-all span{text-decoration:underline;cursor:pointer}
 .empty{text-align:center;padding:48px 24px;color:var(--text3)}
@@ -80,12 +94,27 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 .dtime{font-size:11px;color:var(--text3)}
 .dta{width:100%;resize:none;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:var(--bg);min-height:200px;line-height:1.6;transition:border .2s}
 .dta:focus{border-color:#bbb}
+/* LINK LIST */
+#link-list-container{padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.link-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.link-item:hover{border-color:#bbb;box-shadow:0 2px 4px rgba(0,0,0,.05)}
+.link-item:active{transform:scale(.98)}
+.link-icon{color:var(--text2);font-size:14px;flex-shrink:0}
+.link-url{flex:1;font-size:13px;color:var(--text);text-decoration:none;word-break:break-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-url:hover{text-decoration:underline}
+.link-copy{padding:4px 8px;font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;transition:all .2s}
+.link-copy:hover{background:var(--border);color:var(--text)}
+.link-copy:active{transform:scale(.95)}
 /* FOOTER */
 .footer{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .footer button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
 .footer .bsd{background:#111;color:#fff;border-color:#111}
 .footer .bdd{color:var(--danger);border-color:var(--danger)}
 .footer button:active{opacity:.7}
+/* TRASH FOOTER */
+.trashfooter{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.trashfooter button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
+.trashfooter button:active{opacity:.7}
 /* TRASH */
 .trash-bar{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
 .btn-dall{width:100%;padding:10px;background:#fff;border:1.5px solid var(--danger);color:var(--danger);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
@@ -109,6 +138,31 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 #share-view{display:none;position:fixed;inset:0;background:var(--bg);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 #share-view.active{display:flex}
 .share-title{font-size:18px;font-weight:700;margin-bottom:16px}
+/* UNSAVED CHANGES POPUP */
+#unsaved-popup{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#unsaved-popup.active{display:flex}
+.popup-content{background:var(--bg);border-radius:var(--radius);padding:20px;max-width:320px;width:100%;box-shadow:var(--shadow)}
+.popup-title{font-size:16px;font-weight:600;margin-bottom:8px}
+.popup-text{font-size:14px;color:var(--text2);margin-bottom:16px}
+.popup-buttons{display:flex;gap:8px}
+.popup-buttons button{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--border)}
+.popup-buttons .btn-save{background:#111;color:#fff;border-color:#111}
+.popup-buttons .btn-discard{color:var(--danger);border-color:var(--danger)}
+.popup-buttons button:active{opacity:.7}
+/* SEARCH OVERLAY */
+#search-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:400;flex-direction:column}
+#search-overlay.active{display:flex}
+.search-overlay-content{flex:1;background:var(--bg);margin-top:var(--hh);overflow:hidden;display:flex;flex-direction:column}
+.search-overlay-header{padding:12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.search-overlay-results{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
+.search-overlay-empty{text-align:center;padding:48px 24px;color:var(--text3)}
+/* FLOATING ACTION BUTTONS */
+.fab-container{position:fixed;bottom:80px;right:20px;z-index:300;display:flex;flex-direction:column;gap:12px;align-items:flex-end}
+.fab{width:56px;height:56px;border-radius:50%;background:#111;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .2s}
+.fab:hover{transform:scale(1.1);box-shadow:0 6px 16px rgba(0,0,0,.2)}
+.fab:active{transform:scale(.95)}
+.fab-search{background:#fff;color:#111;border:1px solid #ddd}
+.fab-add{background:#111;color:#fff}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px}
 </style>
 </head>
@@ -136,9 +190,12 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
   <input type="file" id="imp-file" accept=".lufast" style="display:none" onchange="importNotes(event)">
   <div class="qnote">
     <div class="qn-r1">
-      <button class="btn-img" onclick="triggerImg('main')">📷 Ảnh</button>
+      <div class="qthumb-box" id="qthumb" onclick="onQThumbClick()">
+        <div class="qthumb-ph" id="qthumb-ph">📷</div>
+        <img id="qthumb-img">
+      </div>
       <div class="inp-wrap">
-        <input type="text" id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')">
+        <textarea id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')" rows="1"></textarea>
         <button class="ix" id="qx-t" onclick="clrInp('qn-t','qx-t')">×</button>
       </div>
     </div>
@@ -178,14 +235,18 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
         <img id="dthumb-img">
       </div>
       <div class="dtc">
-        <div class="inp-wrap" style="flex:1;display:flex;flex-direction:column">
-          <input type="text" id="d-title" placeholder="Tiêu đề…" style="flex:1" oninput="chkX('d-title','dx-t')">
+        <div class="inp-wrap" style="flex:1">
+          <textarea id="d-title" placeholder="Tiêu đề…" style="width:100%;height:100%;resize:none;padding:8px 26px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:600;outline:none;background:var(--bg);transition:border .2s" oninput="chkX('d-title','dx-t')" rows="1"></textarea>
           <button class="ix" id="dx-t" onclick="clrInp('d-title','dx-t')">×</button>
         </div>
         <div class="dtime" id="d-time"></div>
       </div>
     </div>
-    <textarea class="dta" id="d-content" placeholder="Nội dung…"></textarea>
+    <textarea class="dta" id="d-content" placeholder="Nội dung…" oninput="updateLinkList()"></textarea>
+    <div id="link-list-container" style="display:none;margin-top:8px;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">🔗 Links trong ghi chú:</div>
+      <div id="link-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
   </div>
   <div class="footer">
     <button class="bsd" onclick="saveDetail()">Save</button>
@@ -204,6 +265,9 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
   </div>
   <div class="trash-bar"><button class="btn-dall" onclick="delAllTrash()">Xóa tất cả trong Trash</button></div>
   <div class="tlist" id="tlist"></div>
+  <div class="trashfooter">
+    <button onclick="goHome()">Back</button>
+  </div>
 </div>
 
 <!-- SHARE VIEW -->
@@ -223,6 +287,33 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     </div>
     <div style="margin-top:8px;font-size:12px;color:var(--text3);text-align:center">Save xong sẽ tự đóng</div>
   </div>
+</div>
+
+<!-- UNSAVED CHANGES POPUP -->
+<div id="unsaved-popup">
+  <div class="popup-content">
+    <div class="popup-title">Có thay đổi chưa lưu</div>
+    <div class="popup-text">Bạn có muốn lưu các thay đổi trước khi rời đi?</div>
+    <div class="popup-buttons">
+      <button class="btn-save" onclick="handleSave()">Lưu</button>
+      <button class="btn-discard" onclick="handleDiscard()">Bỏ qua</button>
+      <button onclick="cancelBack()">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH OVERLAY -->
+<div id="search-overlay" onclick="hideSearchOverlay()">
+  <div class="search-overlay-content" onclick="event.stopPropagation()">
+    <div class="search-overlay-header" id="search-overlay-header"></div>
+    <div class="search-overlay-results" id="search-overlay-results"></div>
+  </div>
+</div>
+
+<!-- FLOATING ACTION BUTTONS -->
+<div class="fab-container">
+  <button class="fab fab-search" onclick="focusSearch()" title="Tìm kiếm">🔍</button>
+  <button class="fab fab-add" onclick="focusQuickNote()" title="Thêm ghi chú">+</button>
 </div>
 
 <!-- LIGHTBOX -->
@@ -259,7 +350,7 @@ function dbDel(s,id){return new Promise((res,rej)=>{const r=db.transaction(s,'re
 function dbClear(s){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).clear();r.onsuccess=()=>res();r.onerror=()=>rej()})}
 
 // ── STATE ─────────────────────────────────────────────────────────────────
-let notes=[],trash=[],curNote=null,showAll=false,curSearchWords=null,imgCtx=null,quickImg=null;
+let notes=[],trash=[],curNote=null,showAll=false,curSearchWords=null,imgCtx=null,quickImg=null,originalNote=null;
 
 // ── TOAST ─────────────────────────────────────────────────────────────────
 function toast(msg,dur=2200){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.getElementById('toast-wrap').appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},dur)}
@@ -274,9 +365,64 @@ function nd(s){return(s||'').toLowerCase().replace(/[^\u0000-\u007E]/g,m=>DM[m]|
 
 function scoreNote(n,words){const tn=nd(n.title),cn=nd(n.content||'');let s=0;for(const w of words){if(tn.includes(w))s+=2;else if(cn.includes(w))s+=1;else return -1}return s}
 
-function hlText(text,words){if(!words||!words.length)return esc(text);const raw=esc(text);if(!raw)return raw;let r=raw;for(const w of words){if(!w)continue;const re=new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');r=r.replace(re,'<mark class="hl">$1</mark>')}return r}
+function hlText(text,words){if(!words||!words.length)return linkify(esc(text));const raw=esc(text);if(!raw)return raw;let r=raw;for(const w of words){if(!w)continue;const re=new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');r=r.replace(re,'<mark class="hl">$1</mark>')}return linkify(r)}
+function linkify(text){
+  const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+  return text.replace(urlRegex, function(url) {
+    return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline">' + url + '</a>';
+  });
+}
 
 function chkX(inpId,btnId){const v=document.getElementById(inpId).value;document.getElementById(btnId).style.display=v?'block':'none'}
+
+function extractUrls(text){
+  const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+  const matches = text.match(urlRegex);
+  return matches ? [...new Set(matches)] : []; // Remove duplicates
+}
+
+function updateLinkList(){
+  const content = document.getElementById('d-content').value;
+  const container = document.getElementById('link-list-container');
+  const listEl = document.getElementById('link-list');
+  
+  if(!content){
+    container.style.display = 'none';
+    return;
+  }
+  
+  const urls = extractUrls(content);
+  
+  if(urls.length === 0){
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  
+  let html = '';
+  urls.forEach((url, index) => {
+    const displayUrl = url.length > 60 ? url.substring(0, 60) + '...' : url;
+    html += `
+      <div class="link-item">
+        <span class="link-icon">🔗</span>
+        <a href="${url}" target="_blank" rel="noopener noreferrer" class="link-url" title="${url}">${displayUrl}</a>
+        <button class="link-copy" onclick="copyLink('${url}')">Copy</button>
+      </div>
+    `;
+  });
+  
+  listEl.innerHTML = html;
+}
+
+function copyLink(url){
+  navigator.clipboard.writeText(url).then(() => {
+    toast('Đã copy link ✓');
+  }).catch(() => {
+    toast('Copy thất bại');
+  });
+}
+function autoResize(textarea){textarea.style.height='auto';textarea.style.height=textarea.scrollHeight+'px'}
 function clrInp(inpId,btnId){const el=document.getElementById(inpId);el.value='';document.getElementById(btnId).style.display='none';el.focus()}
 
 // ── VIEWS ─────────────────────────────────────────────────────────────────
@@ -304,7 +450,7 @@ function toggleDd2(){const d=document.getElementById('dd2');d.classList.contains
 function closeDd2(){document.getElementById('dd2').classList.remove('open')}
 
 // ── QUICKNOTE ─────────────────────────────────────────────────────────────
-function clearQuick(){document.getElementById('qn-content').value='';document.getElementById('qn-t').value='';document.getElementById('qx-t').style.display='none';quickImg=null;document.getElementById('qn-content').focus()}
+function clearQuick(){document.getElementById('qn-content').value='';document.getElementById('qn-t').value='';document.getElementById('qx-t').style.display='none';quickImg=null;setQThumb(null);document.getElementById('qn-content').focus()}
 async function saveQuick(){const t=document.getElementById('qn-t').value.trim(),c=document.getElementById('qn-content').value.trim();if(!t&&!c&&!quickImg){toast('Không có nội dung để lưu');return}const n={id:uid(),title:t,content:c,img:quickImg,createdAt:Date.now(),updatedAt:Date.now()};await dbPut('notes',n);notes.unshift(n);clearQuick();renderList();toast('Đã lưu ✓')}
 
 // ── SEARCH ────────────────────────────────────────────────────────────────
@@ -326,13 +472,17 @@ function syncSearch(val){
   document.getElementById('srch').value=val;
   document.getElementById('srch-x').style.display=val?'block':'none';
   document.getElementById('srch-x2').style.display=val?'block':'none';
-  if(!val){curSearchWords=null;document.getElementById('srch-hdr').style.display='none';return}
+  if(!val){curSearchWords=null;hideSearchOverlay();return}
   const words=nd(val).trim().split(/\s+/).filter(Boolean);
   curSearchWords=words;
   const scored=notes.map(n=>({n,s:scoreNote(n,words)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
-  const hdr=document.getElementById('srch-hdr');
-  hdr.style.display='block';hdr.textContent=`Tìm thấy ${scored.length} kết quả`;
-  // store for when we go back
+  if(scored.length>0){
+    showSearchOverlay();
+    renderSearchOverlay(words,scored.map(x=>x.n));
+  }else{
+    showSearchOverlay();
+    renderSearchOverlay(words,[]);
+  }
 }
 function clearSearch2(){document.getElementById('srch2').value='';document.getElementById('srch-x2').style.display='none';syncSearch('')}
 
@@ -340,20 +490,32 @@ function clearSearch2(){document.getElementById('srch2').value='';document.getEl
 function renderList(words,results){
   const el=document.getElementById('listnote');
   let list=results?[...results]:[...notes].sort((a,b)=>b.updatedAt-a.updatedAt);
-  if(!results&&!showAll)list=list.slice(0,20);
+  if(!results){
+    // Sort: pinned notes first, then by updatedAt
+    list=[...notes].sort((a,b)=>{
+      if(a.pinned&&!b.pinned)return -1;
+      if(!a.pinned&&b.pinned)return 1;
+      return b.updatedAt-a.updatedAt;
+    });
+    if(!showAll)list=list.slice(0,20);
+  }
   let html='';
   if(!list.length){html='<div class="empty"><div class="eico">📝</div><div>Chưa có ghi chú nào</div></div>'}
   else{
     for(const n of list){
       const fromSearch=!!results;
-      const title=fromSearch?hlText(n.title||'',words):esc(n.title||'');
-      const content=fromSearch?hlText(n.content||'',words):esc(n.content||'');
+      const title=fromSearch?hlText(n.title||'',words):linkify(esc(n.title||''));
+      const content=fromSearch?hlText(n.content||'',words):linkify(esc(n.content||''));
       html+=`<div class="ncard" onclick="openDetail('${n.id}',${fromSearch})">
-        ${n.img?`<img class="nthumb" src="${n.img}">`:''}
+        ${n.img?`<div class="nthumb" style="background-image:url('${n.img}')"></div>`:`<div class="nthumb" style="background:var(--surface)"></div>`}
         <div class="nbody">
           <div class="ntitle">${title||'<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
           <div class="ncontent">${content}</div>
           <div class="ntime">${fmt(n.updatedAt)}</div>
+        </div>
+        <div class="nactions">
+          <button class="btn-pin ${n.pinned?'pinned':''}" onclick="togglePin('${n.id}',event)" title="${n.pinned?'Bỏ ghim':'Ghim'}">${n.pinned?'📌':'📍'}</button>
+          <button class="btn-trash" onclick="deleteFromList('${n.id}',event)" title="Xóa">🗑️</button>
         </div></div>`
     }
     if(!results){
@@ -370,6 +532,7 @@ function showLess(){showAll=false;if(curSearchWords){doSearch()}else renderList(
 let fromSearch=false;
 function openDetail(id,isSearch){
   curNote=notes.find(n=>n.id===id);if(!curNote)return;
+  originalNote={...curNote}; // Save original state
   fromSearch=!!isSearch;
   document.getElementById('d-title').value=curNote.title||'';
   document.getElementById('d-content').value=curNote.content||'';
@@ -380,14 +543,155 @@ function openDetail(id,isSearch){
   document.getElementById('srch2').value=q;
   document.getElementById('srch-x2').style.display=q?'block':'none';
   setThumb(curNote.img);
+  updateLinkList();
   showView('detail-view');
 }
 function setThumb(src){const img=document.getElementById('dthumb-img'),ph=document.getElementById('dthumb-ph');if(src){img.src=src;img.style.display='block';ph.style.display='none'}else{img.style.display='none';ph.style.display='flex'}}
 function onThumbClick(){curNote&&curNote.img?openLb(curNote.img):triggerImg('detail')}
-async function saveDetail(){curNote.title=document.getElementById('d-title').value.trim();curNote.content=document.getElementById('d-content').value.trim();curNote.updatedAt=Date.now();await dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);document.getElementById('d-time').textContent=fmt(curNote.updatedAt);toast('Đã lưu ✓')}
+function onQThumbClick(){quickImg?openLb(quickImg):triggerImg('main')}
+function setQThumb(src){const img=document.getElementById('qthumb-img'),ph=document.getElementById('qthumb-ph');if(src){img.src=src;img.style.display='block';ph.style.display='none'}else{img.style.display='none';ph.style.display='flex'}}
+
+// ── UNSAVED CHANGES ─────────────────────────────────────────────────────────
+function hasUnsavedChanges(){
+  if(!curNote||!originalNote)return false;
+  const currentTitle=document.getElementById('d-title').value.trim();
+  const currentContent=document.getElementById('d-content').value.trim();
+  return currentTitle!==originalNote.title||currentContent!==originalNote.content||curNote.img!==originalNote.img;
+}
+function showUnsavedPopup(){document.getElementById('unsaved-popup').classList.add('active')}
+function hideUnsavedPopup(){document.getElementById('unsaved-popup').classList.remove('active')}
+async function saveAndBack(){hideUnsavedPopup();await saveDetail();backDetail()}
+async function saveAndFocusQuick(){hideUnsavedPopup();await saveDetail();goHome();setTimeout(()=>document.getElementById('qn-content').focus(),100)}
+function discardAndBack(){
+  hideUnsavedPopup();
+  curNote={...originalNote};
+  // Restore form values to match original note
+  document.getElementById('d-title').value=curNote.title||'';
+  document.getElementById('d-content').value=curNote.content||'';
+  document.getElementById('dx-t').style.display=curNote.title?'block':'none';
+  // Go back directly without checking unsaved changes again
+  showView('main-view');
+  if(fromSearch&&curSearchWords){
+    // restore search results
+    const q=document.getElementById('srch').value;
+    if(q)doSearch();
+  } else {
+    renderList();
+  }
+}
+function discardAndFocusQuick(){hideUnsavedPopup();curNote={...originalNote};goHome();setTimeout(()=>document.getElementById('qn-content').focus(),100)}
+function cancelBack(){hideUnsavedPopup()}
+function handleSave(){
+  // Check if called from FAB or Back
+  if(window.fabContext){
+    saveAndFocusQuick();
+    window.fabContext=false;
+  }else{
+    saveAndBack();
+  }
+}
+function handleDiscard(){
+  // Check if called from FAB or Back
+  if(window.fabContext){
+    discardAndFocusQuick();
+    window.fabContext=false;
+  }else{
+    discardAndBack();
+  }
+}
+
+// ── SEARCH OVERLAY ───────────────────────────────────────────────────────────
+function showSearchOverlay(){document.getElementById('search-overlay').classList.add('active')}
+function hideSearchOverlay(){document.getElementById('search-overlay').classList.remove('active')}
+function renderSearchOverlay(words,results){
+  const hdr=document.getElementById('search-overlay-header');
+  const res=document.getElementById('search-overlay-results');
+  hdr.textContent=`Tìm thấy ${results.length} kết quả cho "${words.join(' ')}"`;
+  let html='';
+  if(!results.length){html='<div class="search-overlay-empty"><div class="eico">🔍</div><div>Không tìm thấy kết quả nào</div></div>'}
+  else{
+    for(const n of results){
+      const title=hlText(n.title||'',words);
+      const content=hlText(n.content||'',words);
+      html+=`<div class="ncard" onclick="openNoteFromOverlay('${n.id}')">
+        ${n.img?`<div class="nthumb" style="background-image:url('${n.img}')"></div>`:`<div class="nthumb" style="background:var(--surface)"></div>`}
+        <div class="nbody">
+          <div class="ntitle">${title||'<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
+          <div class="ncontent">${content}</div>
+          <div class="ntime">${fmt(n.updatedAt)}</div>
+        </div>
+        <div class="nactions">
+          <button class="btn-pin ${n.pinned?'pinned':''}" onclick="event.stopPropagation();togglePin('${n.id}',event)" title="${n.pinned?'Bỏ ghim':'Ghim'}">${n.pinned?'📌':'📍'}</button>
+          <button class="btn-trash" onclick="event.stopPropagation();deleteFromList('${n.id}',event)" title="Xóa">🗑️</button>
+        </div></div>`
+    }
+  }
+  res.innerHTML=html;
+}
+function openNoteFromOverlay(noteId){
+  hideSearchOverlay();
+  openDetail(noteId,false);
+}
+
+// ── FLOATING ACTION BUTTONS ───────────────────────────────────────────────
+function focusSearch(){
+  // Check current view and focus appropriate search
+  const mainView=document.getElementById('main-view').classList.contains('active');
+  const detailView=document.getElementById('detail-view').classList.contains('active');
+  
+  if(mainView){
+    document.getElementById('srch').focus();
+  }else if(detailView){
+    document.getElementById('srch2').focus();
+  }
+}
+function focusQuickNote(){
+  // Check if in detail view with unsaved changes
+  const detailView=document.getElementById('detail-view').classList.contains('active');
+  if(detailView&&hasUnsavedChanges()){
+    window.fabContext=true; // Set FAB context
+    showUnsavedPopup();
+    return;
+  }
+  
+  // Go to main view and focus quick note content
+  goHome();
+  setTimeout(()=>document.getElementById('qn-content').focus(),100);
+}
+
+// ── NOTE ACTIONS ─────────────────────────────────────────────────────────────
+async function togglePin(noteId, event){
+  event.stopPropagation(); // Prevent opening detail
+  const note=notes.find(n=>n.id===noteId);
+  if(!note)return;
+  note.pinned=!note.pinned;
+  note.updatedAt=Date.now();
+  await dbPut('notes',note);
+  renderList();
+  toast(note.pinned?'Đã ghim ✓':'Đã bỏ ghim');
+}
+async function deleteFromList(noteId, event){
+  event.stopPropagation(); // Prevent opening detail
+  if(!confirm('Xóa note này?'))return;
+  const note=notes.find(n=>n.id===noteId);
+  if(!note)return;
+  await dbDel('notes',noteId);
+  const tr={...note,deletedAt:Date.now()};
+  await dbPut('trash',tr);
+  notes=notes.filter(n=>n.id!==noteId);
+  trash.push(tr);
+  renderList();
+  toast('Đã xóa');
+}
+async function saveDetail(){curNote.title=document.getElementById('d-title').value.trim();curNote.content=document.getElementById('d-content').value.trim();curNote.updatedAt=Date.now();await dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);originalNote={...curNote};document.getElementById('d-time').textContent=fmt(curNote.updatedAt);toast('Đã lưu ✓')}
 function copyDetail(){const t=document.getElementById('d-title').value,c=document.getElementById('d-content').value;navigator.clipboard.writeText((t?t+'\n':'')+c).then(()=>toast('Đã copy ✓')).catch(()=>toast('Copy thất bại'))}
 async function deleteNote(){if(!confirm('Xóa note này?'))return;await dbDel('notes',curNote.id);const tr={...curNote,deletedAt:Date.now()};await dbPut('trash',tr);notes=notes.filter(n=>n.id!==curNote.id);trash.push(tr);toast('Đã xóa');goHome()}
 function backDetail(){
+  window.fabContext=false; // Reset FAB context
+  if(hasUnsavedChanges()){
+    showUnsavedPopup();
+    return;
+  }
   showView('main-view');
   if(fromSearch&&curSearchWords){
     // restore search results
@@ -404,7 +708,7 @@ function renderTrash(){
   if(!trash.length){el.innerHTML='<div class="empty"><div class="eico">🗑️</div><div>Thùng rác trống</div></div>';return}
   let html='';
   for(const n of [...trash].sort((a,b)=>b.deletedAt-a.deletedAt)){
-    html+=`<div class="tcard"><div class="tcbody"><div class="tctitle">${esc(n.title||'Không tiêu đề')}</div><div class="tccontent">${esc(n.content||'')}</div></div><div class="tcbtns"><button class="brest" onclick="restoreNote('${n.id}')">Restore</button><button class="bdel" onclick="permDel('${n.id}')">Delete</button></div></div>`
+    html+=`<div class="tcard"><div class="tcbody"><div class="tctitle">${linkify(esc(n.title||'Không tiêu đề'))}</div><div class="tccontent">${linkify(esc(n.content||''))}</div></div><div class="tcbtns"><button class="brest" onclick="restoreNote('${n.id}')">Restore</button><button class="bdel" onclick="permDel('${n.id}')">Delete</button></div></div>`
   }
   el.innerHTML=html;
 }
@@ -415,7 +719,7 @@ async function delAllTrash(){if(!trash.length){toast('Thùng rác đã trống')
 // ── IMAGE ─────────────────────────────────────────────────────────────────
 function triggerImg(ctx){imgCtx=ctx;document.getElementById('add-img').click()}
 function resizeImg(file,cb){const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const mw=1000,scale=img.width>mw?mw/img.width:1,w=Math.round(img.width*scale),h=Math.round(img.height*scale),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);c.toBlob(b=>cb(b),'image/jpeg',.7);URL.revokeObjectURL(url)};img.src=url}
-function handleAddImg(e){const f=e.target.files[0];e.target.value='';if(!f)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{if(imgCtx==='main'){quickImg=ev.target.result;toast('Đã thêm ảnh ✓')}else if(imgCtx==='detail'&&curNote){curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thêm ảnh ✓')}};r.readAsDataURL(blob)})}
+function handleAddImg(e){const f=e.target.files[0];e.target.value='';if(!f)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{if(imgCtx==='main'){quickImg=ev.target.result;setQThumb(quickImg);toast('Đã thêm ảnh ✓')}else if(imgCtx==='detail'&&curNote){curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thêm ảnh ✓')}};r.readAsDataURL(blob)})}
 document.getElementById('rep-img').addEventListener('change',function(e){const f=e.target.files[0];e.target.value='';if(!f||!curNote)return;resizeImg(f,blob=>{const r=new FileReader();r.onload=ev=>{curNote.img=ev.target.result;setThumb(curNote.img);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);toast('Đã thay ảnh ✓')};r.readAsDataURL(blob)})});
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────
@@ -491,7 +795,7 @@ async function lbCopy(){
 }
 function lbDownload(){const a=document.createElement('a');a.href=document.getElementById('lb-img').src;a.download='lufast-'+Date.now()+'.jpg';a.click();toast('Đang tải ảnh...')}
 function lbReplace(){closeLb();document.getElementById('rep-img').click()}
-function lbDelete(){if(!curNote||!confirm('Xóa ảnh này?'))return;curNote.img=null;setThumb(null);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);closeLb();toast('Đã xóa ảnh')}
+function lbDelete(){if(curNote){if(!confirm('Xóa ảnh này?'))return;curNote.img=null;setThumb(null);dbPut('notes',curNote);notes=notes.map(n=>n.id===curNote.id?curNote:n);closeLb();toast('Đã xóa ảnh')}else{if(!confirm('Xóa ảnh này?'))return;quickImg=null;setQThumb(null);closeLb();toast('Đã xóa ảnh')}}
 
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────
 const EK='LuFast2025!';
