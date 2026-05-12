@@ -1029,8 +1029,9 @@ async function saveShare() {
   toast('Đã lưu ✓');
 
   setTimeout(() => {
-    // history.back() quay về đúng trang mạng xã hội trước đó
-    // vì browser history vẫn còn lưu trang đó dù SW đã redirect
+    // Ẩn share view ngay lập tức
+    document.getElementById('share-view').classList.remove('active');
+    // Quay lại mạng xã hội
     history.back();
   }, 500);
 }
