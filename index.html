@@ -63,6 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* LIST */
 .listnote{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
 .ncard{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:2px;margin-bottom:3px;cursor:pointer;display:flex;gap:8px;align-items:flex-start}
+.ncard.pinned{background:#fffbeb;border-color:#fde68a}
 .ncard:active{box-shadow:var(--shadow)}
 .nthumb{width:55px;height:55px;border-radius:6px;background-size:cover;background-position:center;flex-shrink:0}
 .nbody{flex:1;min-width:0}
@@ -106,7 +107,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 .link-copy:hover{background:var(--border);color:var(--text)}
 .link-copy:active{transform:scale(.95)}
 /* FOOTER */
-.footer{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.footer{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;position:sticky;bottom:0;z-index:10}
 .footer button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
 .footer .bsd{background:#111;color:#fff;border-color:#111}
 .footer .bdd{color:var(--danger);border-color:var(--danger)}
@@ -117,7 +118,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
   padding: 10px 1px;
 }
 /* TRASH FOOTER */
-.trashfooter{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
+.trashfooter{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;position:sticky;bottom:0;z-index:10}
 .trashfooter button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
 .trashfooter button:active{opacity:.7}
 /* TRASH */
@@ -207,7 +208,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch" placeholder="Tìm ghi chú…v17-online-offline" autocomplete="off"
+      <input type="search" id="srch" placeholder="Tìm ghi chú…v19" autocomplete="off"
         oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
     </div>
@@ -252,7 +253,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome()">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch2" placeholder="Tìm ghi chú…v15" autocomplete="off"
+      <input type="search" id="srch2" placeholder="Tìm ghi chú…" autocomplete="off"
         oninput="syncSearch(this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x2" onclick="clearSearch2()">×</button>
     </div>
@@ -565,7 +566,7 @@ function renderList(words,results){
       const fromSearch=!!results;
       const title=fromSearch?hlText(n.title||'',words):linkify(esc(n.title||''));
       const content=fromSearch?hlText(n.content||'',words):linkify(esc(n.content||''));
-      html+=`<div class="ncard" onclick="openDetail('${n.id}',${fromSearch})">
+      html+=`<div class="ncard${n.pinned?' pinned':''}" onclick="openDetail('${n.id}',${fromSearch})">
         ${n.img?`<div class="nthumb" style="background-image:url('${n.img}')"></div>`:`<div class="nthumb" style="background:var(--surface)"></div>`}
         <div class="nbody">
           <div class="ntitle">${title||'<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
@@ -678,7 +679,7 @@ function renderSearchOverlay(words,results){
     for(const n of results){
       const title=hlText(n.title||'',words);
       const content=hlText(n.content||'',words);
-      html+=`<div class="ncard" onclick="openNoteFromOverlay('${n.id}')">
+      html+=`<div class="ncard${n.pinned?' pinned':''}" onclick="openNoteFromOverlay('${n.id}')">
         ${n.img?`<div class="nthumb" style="background-image:url('${n.img}')"></div>`:`<div class="nthumb" style="background:var(--surface)"></div>`}
         <div class="nbody">
           <div class="ntitle">${title||'<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
