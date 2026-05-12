@@ -966,6 +966,7 @@ async function importNotes(e){
 
 // ── SHARE ─────────────────────────────────────────────────────────────────
 let shareImgData = null;
+let shareReferrer = '';   // ← lưu referrer của mạng xã hội
 
 function fmtShareTitle() {
   const d = new Date();
@@ -1027,44 +1028,44 @@ async function saveShare() {
   notes.unshift(n);
   toast('Đã lưu ✓');
 
-  // Quay lại màn hình trước (mạng xã hội) ngay lập tức
+  // Dùng referrer đã lưu từ lúc share (không dùng document.referrer)
   setTimeout(() => {
-    if (document.referrer) {
-      window.location.href = document.referrer;
+    if (shareReferrer && shareReferrer !== '' && !shareReferrer.includes(location.hostname)) {
+      // Quay lại mạng xã hội
+      window.location.href = shareReferrer;
     } else {
-      // Fallback: nếu không có referrer thì đóng tab/window
+      // Fallback: thử close (nếu PWA mở share trong window riêng)
       window.close();
-      // Nếu close() không được (PWA), ẩn share view và về home
+      // Nếu close không được → về main view
       setTimeout(() => {
         document.getElementById('share-view').classList.remove('active');
         showView('main-view');
         renderList();
       }, 300);
     }
-  }, 500); // 500ms để toast hiện trước khi chuyển
+  }, 500);
 }
 
-function handleShared(title, text, url) {
+function handleShared(title, text, url, referrer) {
+  shareReferrer = referrer || '';   // ← lưu lại để saveShare() dùng
+
   const sv = document.getElementById('share-view');
   sv.classList.add('active');
 
-  // Title mặc định: "LuFast yymmdd hh:mm"
   document.getElementById('sh-t').value = fmtShareTitle();
   chkX('sh-t', 'shx-t');
 
-  // Dòng 1 = link share, dòng 2 = trống để user gõ
   const link = url || text || '';
   document.getElementById('sh-c').value = link ? (link + '\n') : '';
 
   shareImgData = null;
   setSQThumb(null);
 
-  // Focus vào đầu dòng 2 sau khi render xong
   setTimeout(() => {
     const ta = document.getElementById('sh-c');
     ta.focus();
     if (link) {
-      const pos = link.length + 1; // sau ký tự '\n'
+      const pos = link.length + 1;
       ta.setSelectionRange(pos, pos);
     }
   }, 200);
@@ -1126,18 +1127,15 @@ async function checkShareInbox() {
     if (!res) return;
 
     const data = await res.json();
-
-    // Xóa khỏi hộp thư ngay để không đọc lại lần sau
     await inbox.delete('/share-inbox');
 
-    // Chỉ xử lý nếu share data còn mới (trong vòng 5 phút)
-    // → Phòng trường hợp cực hiếm: SW lưu nhưng app crash chưa đọc
     const age = Date.now() - (data.ts || 0);
     if (age > 5 * 60 * 1000) return;
 
-    handleShared(data.title, data.text, data.url);
+    // Truyền referrer vào handleShared
+    handleShared(data.title, data.text, data.url, data.referrer);
   } catch (e) {
-    // Cache API không khả dụng → bỏ qua
+    // bỏ qua
   }
 }
 

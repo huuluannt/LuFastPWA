@@ -1,4 +1,4 @@
-const CACHE = 'lufast-v4';
+const CACHE = 'lufast-v5';
 const SHARE_CACHE = 'lufast-share-inbox';
 const PRECACHE = ['/', '/manifest.json'];
 
@@ -23,12 +23,13 @@ self.addEventListener('fetch', e => {
 
   if (e.request.method === 'GET' && hasShare) {
     e.respondWith((async () => {
-      // Lưu share data vào Cache Storage (hộp thư)
+      // Lưu share data + referrer vào inbox
       const shareData = {
-        title: url.searchParams.get('title') || '',
-        text:  url.searchParams.get('text')  || '',
-        url:   url.searchParams.get('url')   || '',
-        ts:    Date.now()
+        title:    url.searchParams.get('title') || '',
+        text:     url.searchParams.get('text')  || '',
+        url:      url.searchParams.get('url')   || '',
+        referrer: e.request.referrer || '',        // ← lưu referrer ở đây
+        ts:       Date.now()
       };
       const inbox = await caches.open(SHARE_CACHE);
       await inbox.put(
@@ -37,9 +38,6 @@ self.addEventListener('fetch', e => {
           headers: { 'Content-Type': 'application/json' }
         })
       );
-
-      // Redirect về URL sạch (không có params)
-      // → Windows PWA sẽ lưu URL sạch này, không còn params
       return Response.redirect('/', 302);
     })());
     return;
