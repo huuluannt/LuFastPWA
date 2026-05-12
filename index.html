@@ -1029,7 +1029,19 @@ async function saveShare() {
   toast('Đã lưu ✓');
 
   setTimeout(() => {
-    window.close();
+    const ref = sessionStorage.getItem('lufast_share_ref') || '';
+    sessionStorage.removeItem('lufast_share_ref');
+
+    if (ref && !ref.includes(location.hostname)) {
+      // Quay về Facebook/TikTok bằng referrer gốc
+      window.location.href = ref;
+    } else {
+      // Fallback: ẩn share view về main
+      document.getElementById('share-view').classList.remove('active');
+      showView('main-view');
+      renderList();
+      toast('Đã lưu ✓ — Bấm Back để về mạng xã hội');
+    }
   }, 600);
 }
 
@@ -1106,25 +1118,31 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
-// ── CHECK SHARE INBOX ─────────────────────────────────────────────────────
-async function checkShareInbox() {
-  try {
-    const inbox = await caches.open('lufast-share-inbox');
-    const res = await inbox.match('/share-inbox');
-    if (!res) return;
+// ── CHECK SHARE PARAMS ─────────────────────────────────────────────────────
+function checkShareParams() {
+  const p = new URLSearchParams(location.search);
+  if (!p.has('text') && !p.has('url')) return;
 
-    const data = await res.json();
-    await inbox.delete('/share-inbox');
+  // Lưu referrer TRƯỚC KHI xóa params
+  // Lúc này document.referrer vẫn còn là URL Facebook/TikTok
+  const ref = document.referrer || '';
 
-    const age = Date.now() - (data.ts || 0);
-    if (age > 5 * 60 * 1000) return;
+  // Xóa params khỏi URL để Windows PWA không đọc lại lần sau
+  history.replaceState({}, '', '/');
 
-    // Truyền referrer vào handleShared
-    handleShared(data.title, data.text, data.url, data.referrer);
-  } catch (e) {
-    // bỏ qua
-  }
+  // Lưu referrer vào sessionStorage để saveShare() dùng
+  // sessionStorage tồn tại trong suốt session share này
+  if (ref) sessionStorage.setItem('lufast_share_ref', ref);
+
+  handleShared(
+    p.get('title') || '',
+    p.get('text')  || '',
+    p.get('url')   || ''
+  );
 }
+
+// Gọi checkShareParams() ngay khi script chạy (không cần chờ init)
+checkShareParams();
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init(){
@@ -1134,7 +1152,6 @@ async function init(){
   trash.sort((a,b)=>b.deletedAt-a.deletedAt);
   await purgeExpiredTrash();
   renderList();
-  await checkShareInbox(); // đọc hộp thư share sau khi app đã sẵn sàng
 }
 init();
 
