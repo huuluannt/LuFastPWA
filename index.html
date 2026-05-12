@@ -1184,7 +1184,7 @@ init();
 </script>
 <script type="module">
 import { initializeApp }          from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
                                    from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, writeBatch }
                                    from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
@@ -1245,17 +1245,15 @@ window.toggleLogin = async function() {
   } else {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithRedirect(auth, provider);
-    } catch (e) {
-      window.toast('Đăng nhập thất bại');
+      // Popup hoạt động sau khi vercel.json có COOP: same-origin-allow-popups
+      await signInWithPopup(auth, provider);
+    } catch(e) {
+      console.error('Login error', e);
+      window.toast('Đăng nhập thất bại: ' + (e.message || e.code));
     }
   }
 };
 
-// Xử lý kết quả sau khi redirect về từ Google
-getRedirectResult(auth).catch(e => {
-  if (e.code !== 'auth/no-auth-event') console.error('Redirect error', e);
-});
 
 onAuthStateChanged(auth, async user => {
   fbUser = user;
