@@ -1173,6 +1173,7 @@ async function init(){
   Object.defineProperty(window,'trash',{get:()=>trash,set:v=>{trash=v},configurable:true});
   Object.defineProperty(window,'curNote',{get:()=>curNote,set:v=>{curNote=v},configurable:true});
   Object.defineProperty(window,'dbPut',{get:()=>dbPut,configurable:true});
+  Object.defineProperty(window,'dbDel',{get:()=>dbDel,configurable:true});
   Object.defineProperty(window,'renderList',{get:()=>renderList,configurable:true});
   Object.defineProperty(window,'toast',{get:()=>toast,configurable:true});
 
@@ -1183,13 +1184,15 @@ init();
 
 </script>
 <script type="module">
-import { initializeApp }          from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-                                   from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
-import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, writeBatch }
-                                   from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
+  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+import { getFirestore, collection, doc, setDoc, deleteDoc,
+         getDocs, writeBatch, onSnapshot, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
 
-// ── CONFIG ──────────────────────────────────────────────────────────────
+// ── CONFIG ───────────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:            'AIzaSyBKyq1leWeWu3PEwPrnbJE1IwN7O262i0g',
   authDomain:        'lufast-e4e1a.firebaseapp.com',
@@ -1198,279 +1201,344 @@ const firebaseConfig = {
   messagingSenderId: '982801803049',
   appId:             '1:982801803049:web:1eeb7a1ccf6d669614f938'
 };
-const fbApp  = initializeApp(firebaseConfig);
-const auth   = getAuth(fbApp);
-const fbDb   = getFirestore(fbApp);
+const fbApp = initializeApp(firebaseConfig);
+const auth  = getAuth(fbApp);
+const fbDb  = getFirestore(fbApp);
 
-// ── STATE ────────────────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────
 let fbUser = null;
+let unsubNotes = null;   // listener realtime notes
+let unsubTrash = null;   // listener realtime trash
+let unsubDeleted = null; // listener realtime deletedNotes
+let isSyncing = false;
 
-// ── SYNC INDICATOR ───────────────────────────────────────────────────────
+// ── COLLECTIONS ───────────────────────────────────────────────────────────
+const col  = (name) => collection(fbDb, 'users', fbUser.uid, name);
+const ref  = (name, id) => doc(fbDb, 'users', fbUser.uid, name, id);
+
+// ── SYNC INDICATOR ────────────────────────────────────────────────────────
 function setSyncStatus(s) {
   ['sync-indicator','sync-indicator2'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.className = '';
-    if (s) el.classList.add(s); // 'syncing' | 'ok' | 'err'
+    el.className = s ? s : '';
   });
 }
 
-// ── UI UPDATE ────────────────────────────────────────────────────────────
+// ── UI ────────────────────────────────────────────────────────────────────
 function updateAuthUI(user) {
-  const loggedIn = !!user;
-  const name     = user ? (user.displayName || user.email) : '';
-  ['dd-user','dd-user2'].forEach((id,i) => {
+  const on   = !!user;
+  const name = user ? (user.displayName || user.email) : '';
+  ['dd-user','dd-user2'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.textContent = loggedIn ? `👤 ${name}` : '';
-    el.classList.toggle('show', loggedIn);
+    el.textContent = on ? `👤 ${name}` : '';
+    el.classList.toggle('show', on);
   });
   ['dd-login-lbl','dd-login-lbl2'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.textContent = loggedIn ? 'Đăng xuất' : 'Đăng nhập';
+    if (el) el.textContent = on ? 'Đăng xuất' : 'Đăng nhập';
   });
   ['dd-sync-btn','dd-sync-btn2'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = loggedIn ? '' : 'none';
+    if (el) el.style.display = on ? '' : 'none';
   });
-  setSyncStatus(loggedIn ? 'ok' : '');
+  setSyncStatus(on ? 'ok' : '');
 }
 
-// ── AUTH ─────────────────────────────────────────────────────────────────
+// ── AUTH ──────────────────────────────────────────────────────────────────
 window.toggleLogin = async function() {
   if (fbUser) {
     if (!confirm('Đăng xuất khỏi sync?')) return;
+    stopListeners();
     await signOut(auth);
     window.toast('Đã đăng xuất');
   } else {
     try {
-      const provider = new GoogleAuthProvider();
-      // Popup hoạt động sau khi vercel.json có COOP: same-origin-allow-popups
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, new GoogleAuthProvider());
     } catch(e) {
-      console.error('Login error', e);
-      window.toast('Đăng nhập thất bại: ' + (e.message || e.code));
+      window.toast('Đăng nhập thất bại');
+      console.error(e);
     }
   }
 };
-
 
 onAuthStateChanged(auth, async user => {
   fbUser = user;
   updateAuthUI(user);
   if (user) {
-    window.toast('Đã đăng nhập: ' + (user.displayName || user.email));
-    await runSync();
+    await initialSync();   // sync đầy đủ 1 lần khi login
+    startListeners();      // sau đó lắng nghe realtime
+  } else {
+    stopListeners();
   }
 });
 
-// ── HELPERS ───────────────────────────────────────────────────────────────
-function notesCol()  { return collection(fbDb, 'users', fbUser.uid, 'notes'); }
-function trashCol()  { return collection(fbDb, 'users', fbUser.uid, 'trash'); }
-function noteDoc(id) { return doc(fbDb, 'users', fbUser.uid, 'notes', id); }
-function trashDoc(id){ return doc(fbDb, 'users', fbUser.uid, 'trash', id); }
-
-// ── PUSH 1 NOTE LÊN CLOUD ────────────────────────────────────────────────
-async function pushNote(n)      { await setDoc(noteDoc(n.id), n); }
-async function pushTrash(n)     { await setDoc(trashDoc(n.id), n); }
-async function deleteCloudNote(id)  { try { await deleteDoc(noteDoc(id)); } catch{} }
-async function deleteCloudTrash(id) { try { await deleteDoc(trashDoc(id)); } catch{} }
-
-// ── FULL SYNC ─────────────────────────────────────────────────────────────
-async function runSync() {
+// ── REALTIME LISTENERS ────────────────────────────────────────────────────
+function startListeners() {
   if (!fbUser) return;
+
+  // Lắng nghe notes thay đổi trên cloud → cập nhật local
+  unsubNotes = onSnapshot(col('notes'), snap => {
+    snap.docChanges().forEach(async change => {
+      const n = change.doc.data();
+      if (change.type === 'added' || change.type === 'modified') {
+        const local = window.notes.find(x => x.id === n.id);
+        if (!local || n.updatedAt > local.updatedAt) {
+          await window.dbPut('notes', n);
+          if (!local) window.notes.push(n);
+          else window.notes = window.notes.map(x => x.id === n.id ? n : x);
+          window.notes.sort((a,b) => b.updatedAt - a.updatedAt);
+          window.renderList();
+        }
+      }
+    });
+  });
+
+  // Lắng nghe trash
+  unsubTrash = onSnapshot(col('trash'), snap => {
+    snap.docChanges().forEach(async change => {
+      const n = change.doc.data();
+      if (change.type === 'added' || change.type === 'modified') {
+        const local = window.trash.find(x => x.id === n.id);
+        if (!local || n.deletedAt > (local.deletedAt || 0)) {
+          await window.dbPut('trash', n);
+          if (!local) window.trash.push(n);
+          else window.trash = window.trash.map(x => x.id === n.id ? n : x);
+        }
+      }
+    });
+  });
+
+  // Lắng nghe deletedNotes → xóa note khỏi local nếu bị xóa từ thiết bị khác
+  unsubDeleted = onSnapshot(col('deletedNotes'), snap => {
+    snap.docChanges().forEach(async change => {
+      if (change.type === 'added') {
+        const { id } = change.doc.data();
+        // Xóa khỏi notes local nếu còn
+        const inNotes = window.notes.find(x => x.id === id);
+        if (inNotes) {
+          await window.dbDel('notes', id);
+          window.notes = window.notes.filter(x => x.id !== id);
+          window.renderList();
+          window.toast('Một note vừa bị xóa từ thiết bị khác');
+        }
+      }
+    });
+  });
+}
+
+function stopListeners() {
+  if (unsubNotes)   { unsubNotes();   unsubNotes = null; }
+  if (unsubTrash)   { unsubTrash();   unsubTrash = null; }
+  if (unsubDeleted) { unsubDeleted(); unsubDeleted = null; }
+}
+
+// ── INITIAL SYNC (đầy đủ, 1 lần khi login/mở app) ────────────────────────
+async function initialSync() {
+  if (!fbUser || isSyncing) return;
+  isSyncing = true;
   setSyncStatus('syncing');
   try {
-    // 1. Lấy tất cả từ cloud
-    const [cloudNotesSnap, cloudTrashSnap] = await Promise.all([
-      getDocs(notesCol()),
-      getDocs(trashCol())
+    const [cloudNotesSnap, cloudTrashSnap, cloudDeletedSnap] = await Promise.all([
+      getDocs(col('notes')),
+      getDocs(col('trash')),
+      getDocs(col('deletedNotes'))
     ]);
-    const cloudNotes = cloudNotesSnap.docs.map(d => d.data());
-    const cloudTrash = cloudTrashSnap.docs.map(d => d.data());
 
-    // 2. Lấy local (dùng biến global của app)
-    const localNotes = window.notes || [];
-    const localTrash = window.trash || [];
+    const cloudNotes   = cloudNotesSnap.docs.map(d => d.data());
+    const cloudTrash   = cloudTrashSnap.docs.map(d => d.data());
+    const deletedIds   = new Set(cloudDeletedSnap.docs.map(d => d.data().id));
 
-    // 3. Merge notes — last-write-wins theo updatedAt
-    const mergedNotes = mergeByUpdatedAt(localNotes, cloudNotes);
-    const mergedTrash = mergeByUpdatedAt(localTrash, cloudTrash);
-
-    // 4. Ghi batch lên cloud (chỉ những note mới hơn local)
-    const batch1 = writeBatch(fbDb);
-    for (const n of mergedNotes) {
-      const local = localNotes.find(x => x.id === n.id);
-      if (!local || n.updatedAt > (local.updatedAt || 0)) {
-        // cloud mới hơn → đã merge rồi, không cần push lại
-      } else {
-        batch1.set(noteDoc(n.id), n);
+    // Xóa những note local đã bị xóa từ thiết bị khác
+    for (const id of deletedIds) {
+      const inNotes = window.notes.find(x => x.id === id);
+      if (inNotes) {
+        await window.dbDel('notes', id);
+        window.notes = window.notes.filter(x => x.id !== id);
       }
     }
-    // Push những note local mới hơn cloud lên
-    for (const ln of localNotes) {
-      const cn = cloudNotes.find(x => x.id === ln.id);
-      if (!cn || ln.updatedAt > (cn.updatedAt || 0)) {
-        batch1.set(noteDoc(ln.id), ln);
-      }
-    }
-    await batch1.commit();
 
-    const batch2 = writeBatch(fbDb);
-    for (const lt of localTrash) {
-      const ct = cloudTrash.find(x => x.id === lt.id);
-      if (!ct || lt.deletedAt > (ct.deletedAt || 0)) {
-        batch2.set(trashDoc(lt.id), lt);
-      }
-    }
-    await batch2.commit();
-
-    // 5. Ghi merged data về IndexedDB và memory
+    // Merge notes
     let added = 0, updated = 0;
-    for (const n of mergedNotes) {
-      const local = localNotes.find(x => x.id === n.id);
-      if (!local) { await window.dbPut('notes', n); window.notes.push(n); added++; }
-      else if (n.updatedAt > local.updatedAt) {
+    for (const n of cloudNotes) {
+      if (deletedIds.has(n.id)) continue; // bỏ qua note đã xóa
+      const local = window.notes.find(x => x.id === n.id);
+      if (!local) {
+        await window.dbPut('notes', n);
+        window.notes.push(n);
+        added++;
+      } else if (n.updatedAt > local.updatedAt) {
         await window.dbPut('notes', n);
         window.notes = window.notes.map(x => x.id === n.id ? n : x);
         updated++;
       }
     }
-    for (const n of mergedTrash) {
-      const local = localTrash.find(x => x.id === n.id);
-      if (!local) { await window.dbPut('trash', n); window.trash.push(n); }
-      else if (n.deletedAt > local.deletedAt) {
+
+    // Push local notes chưa có trên cloud
+    const batch = writeBatch(fbDb);
+    for (const n of window.notes) {
+      if (deletedIds.has(n.id)) continue;
+      const onCloud = cloudNotes.find(x => x.id === n.id);
+      if (!onCloud || n.updatedAt > onCloud.updatedAt) {
+        batch.set(ref('notes', n.id), n);
+      }
+    }
+
+    // Merge trash
+    for (const n of cloudTrash) {
+      const local = window.trash.find(x => x.id === n.id);
+      if (!local) {
+        await window.dbPut('trash', n);
+        window.trash.push(n);
+      } else if ((n.deletedAt||0) > (local.deletedAt||0)) {
         await window.dbPut('trash', n);
         window.trash = window.trash.map(x => x.id === n.id ? n : x);
       }
     }
+    for (const n of window.trash) {
+      const onCloud = cloudTrash.find(x => x.id === n.id);
+      if (!onCloud) batch.set(ref('trash', n.id), n);
+    }
 
-    // 6. Re-render
+    await batch.commit();
+
     window.notes.sort((a,b) => b.updatedAt - a.updatedAt);
     window.renderList();
-
     setSyncStatus('ok');
     if (added || updated) window.toast(`Sync ✓ — +${added} mới, ${updated} cập nhật`);
-    else window.toast('Sync ✓ — Dữ liệu đã đồng bộ');
-
+    else window.toast('Sync ✓');
   } catch(e) {
     console.error('Sync error', e);
     setSyncStatus('err');
-    window.toast('Sync thất bại — kiểm tra mạng');
+    window.toast('Sync thất bại');
+  } finally {
+    isSyncing = false;
   }
-}
-
-function mergeByUpdatedAt(local, cloud) {
-  const map = new Map();
-  for (const n of local)  map.set(n.id, n);
-  for (const n of cloud)  {
-    const l = map.get(n.id);
-    if (!l || (n.updatedAt || 0) > (l.updatedAt || 0)) map.set(n.id, n);
-  }
-  return Array.from(map.values());
 }
 
 // ── MANUAL SYNC ───────────────────────────────────────────────────────────
 window.manualSync = async function() {
   if (!fbUser) { window.toast('Vui lòng đăng nhập trước'); return; }
-  await runSync();
+  await initialSync();
 };
 
-// ── AUTO SYNC SAU MỖI THAO TÁC ──────────────────────────────────────────
-// Patch các hàm write để tự push lên cloud sau khi ghi local
-const _origSaveQuick = window.saveQuick;
+// ── HELPERS GHI CLOUD ────────────────────────────────────────────────────
+async function cloudPut(name, data) {
+  if (!fbUser) return;
+  try { await setDoc(ref(name, data.id), data); setSyncStatus('ok'); }
+  catch(e) { console.error(e); setSyncStatus('err'); }
+}
+
+async function cloudDelete(noteId) {
+  if (!fbUser) return;
+  try {
+    // Xóa khỏi notes collection
+    await deleteDoc(ref('notes', noteId));
+    // Ghi vào deletedNotes để các thiết bị khác biết
+    await setDoc(ref('deletedNotes', noteId), { id: noteId, deletedAt: Date.now() });
+    setSyncStatus('ok');
+  } catch(e) { console.error(e); setSyncStatus('err'); }
+}
+
+async function cloudDeleteTrash(noteId) {
+  if (!fbUser) return;
+  try {
+    await deleteDoc(ref('trash', noteId));
+    await setDoc(ref('deletedNotes', noteId), { id: noteId, deletedAt: Date.now() });
+    setSyncStatus('ok');
+  } catch(e) { console.error(e); setSyncStatus('err'); }
+}
+
+// ── PATCH CÁC HÀM WRITE ──────────────────────────────────────────────────
+const _saveQuick = window.saveQuick;
 window.saveQuick = async function() {
-  await _origSaveQuick.apply(this, arguments);
-  if (fbUser && window.notes.length) {
-    try { await pushNote(window.notes[0]); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
-  }
+  await _saveQuick.apply(this, arguments);
+  if (fbUser && window.notes.length) await cloudPut('notes', window.notes[0]);
 };
 
-const _origSaveDetail = window.saveDetail;
+const _saveDetail = window.saveDetail;
 window.saveDetail = async function() {
-  await _origSaveDetail.apply(this, arguments);
-  if (fbUser && window.curNote) {
-    try { await pushNote(window.curNote); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
-  }
+  await _saveDetail.apply(this, arguments);
+  if (fbUser && window.curNote) await cloudPut('notes', window.curNote);
 };
 
-const _origDeleteNote = window.deleteNote;
+const _deleteNote = window.deleteNote;
 window.deleteNote = async function() {
   const id = window.curNote?.id;
-  await _origDeleteNote.apply(this, arguments);
+  await _deleteNote.apply(this, arguments);
   if (fbUser && id) {
-    try {
-      await deleteCloudNote(id);
-      if (window.trash.length) await pushTrash(window.trash[0]);
-      setSyncStatus('ok');
-    } catch { setSyncStatus('err'); }
+    await cloudDelete(id);
+    // Push note vào trash cloud
+    const t = window.trash.find(x => x.id === id);
+    if (t) await cloudPut('trash', t);
   }
 };
 
-const _origDeleteFromList = window.deleteFromList;
+const _deleteFromList = window.deleteFromList;
 window.deleteFromList = async function(noteId, event) {
-  await _origDeleteFromList.apply(this, [noteId, event]);
+  await _deleteFromList.apply(this, [noteId, event]);
   if (fbUser) {
-    try {
-      await deleteCloudNote(noteId);
-      const t = window.trash.find(x => x.id === noteId);
-      if (t) await pushTrash(t);
-      setSyncStatus('ok');
-    } catch { setSyncStatus('err'); }
+    await cloudDelete(noteId);
+    const t = window.trash.find(x => x.id === noteId);
+    if (t) await cloudPut('trash', t);
   }
 };
 
-const _origTogglePin = window.togglePin;
+const _togglePin = window.togglePin;
 window.togglePin = async function(noteId, event) {
-  await _origTogglePin.apply(this, [noteId, event]);
+  await _togglePin.apply(this, [noteId, event]);
   if (fbUser) {
     const n = window.notes.find(x => x.id === noteId);
-    if (n) try { await pushNote(n); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
+    if (n) await cloudPut('notes', n);
   }
 };
 
-const _origRestoreNote = window.restoreNote;
+const _restoreNote = window.restoreNote;
 window.restoreNote = async function(id) {
-  await _origRestoreNote.apply(this, [id]);
+  await _restoreNote.apply(this, [id]);
   if (fbUser) {
     const n = window.notes.find(x => x.id === id);
-    if (n) try {
-      await pushNote(n);
-      await deleteCloudTrash(id);
-      setSyncStatus('ok');
-    } catch { setSyncStatus('err'); }
+    if (n) {
+      await cloudPut('notes', n);
+      await deleteDoc(ref('trash', id));
+      // Xóa khỏi deletedNotes nếu có (restore = hồi sinh)
+      try { await deleteDoc(ref('deletedNotes', id)); } catch {}
+    }
   }
 };
 
-const _origPermDel = window.permDel;
+const _permDel = window.permDel;
 window.permDel = async function(id) {
-  await _origPermDel.apply(this, [id]);
-  if (fbUser) try { await deleteCloudTrash(id); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
+  await _permDel.apply(this, [id]);
+  if (fbUser) await cloudDeleteTrash(id);
 };
 
-const _origDelAllTrash = window.delAllTrash;
+const _delAllTrash = window.delAllTrash;
 window.delAllTrash = async function() {
-  await _origDelAllTrash.apply(this, arguments);
-  if (fbUser) try {
-    const snap = await getDocs(trashCol());
-    const b = writeBatch(fbDb);
-    snap.docs.forEach(d => b.delete(d.ref));
-    await b.commit();
+  const ids = window.trash.map(x => x.id);
+  await _delAllTrash.apply(this, arguments);
+  if (fbUser) {
+    const batch = writeBatch(fbDb);
+    for (const id of ids) {
+      batch.delete(ref('trash', id));
+      batch.set(ref('deletedNotes', id), { id, deletedAt: Date.now() });
+    }
+    await batch.commit();
     setSyncStatus('ok');
-  } catch { setSyncStatus('err'); }
-};
-
-const _origSaveShare = window.saveShare;
-window.saveShare = async function() {
-  await _origSaveShare.apply(this, arguments);
-  if (fbUser && window.notes.length) {
-    try { await pushNote(window.notes[0]); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
   }
 };
 
-// Export các hàm cần thiết ra window để module khác dùng
-window._fbPushNote  = pushNote;
-window._fbRunSync   = runSync;
+const _saveShare = window.saveShare;
+window.saveShare = async function() {
+  await _saveShare.apply(this, arguments);
+  if (fbUser && window.notes.length) await cloudPut('notes', window.notes[0]);
+};
+
+// ── EXPOSE ────────────────────────────────────────────────────────────────
+window._fbRunSync = initialSync;
+window._fbDB = db;
+window.dbDel = window.dbDel || function(){};
 </script>
 </body>
 </html>
