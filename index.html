@@ -207,7 +207,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch" placeholder="Tìm ghi chú…v15" autocomplete="off"
+      <input type="search" id="srch" placeholder="Tìm ghi chú…v17-online-offline" autocomplete="off"
         oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
     </div>
@@ -1167,14 +1167,24 @@ async function init(){
   notes.sort((a,b)=>b.updatedAt-a.updatedAt);
   trash.sort((a,b)=>b.deletedAt-a.deletedAt);
   await purgeExpiredTrash();
+
+  // Expose ra window để Firebase module truy cập
+  Object.defineProperty(window,'notes',{get:()=>notes,set:v=>{notes=v},configurable:true});
+  Object.defineProperty(window,'trash',{get:()=>trash,set:v=>{trash=v},configurable:true});
+  Object.defineProperty(window,'curNote',{get:()=>curNote,set:v=>{curNote=v},configurable:true});
+  Object.defineProperty(window,'dbPut',{get:()=>dbPut,configurable:true});
+  Object.defineProperty(window,'renderList',{get:()=>renderList,configurable:true});
+  Object.defineProperty(window,'toast',{get:()=>toast,configurable:true});
+
   renderList();
+  await checkShareInbox();
 }
 init();
 
 </script>
 <script type="module">
 import { initializeApp }          from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
                                    from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, writeBatch }
                                    from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
@@ -1235,12 +1245,17 @@ window.toggleLogin = async function() {
   } else {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
     } catch (e) {
       window.toast('Đăng nhập thất bại');
     }
   }
 };
+
+// Xử lý kết quả sau khi redirect về từ Google
+getRedirectResult(auth).catch(e => {
+  if (e.code !== 'auth/no-auth-event') console.error('Redirect error', e);
+});
 
 onAuthStateChanged(auth, async user => {
   fbUser = user;
