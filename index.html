@@ -1028,21 +1028,10 @@ async function saveShare() {
   notes.unshift(n);
   toast('Đã lưu ✓');
 
-  // Dùng referrer đã lưu từ lúc share (không dùng document.referrer)
   setTimeout(() => {
-    if (shareReferrer && shareReferrer !== '' && !shareReferrer.includes(location.hostname)) {
-      // Quay lại mạng xã hội
-      window.location.href = shareReferrer;
-    } else {
-      // Fallback: thử close (nếu PWA mở share trong window riêng)
-      window.close();
-      // Nếu close không được → về main view
-      setTimeout(() => {
-        document.getElementById('share-view').classList.remove('active');
-        showView('main-view');
-        renderList();
-      }, 300);
-    }
+    // history.back() quay về đúng trang mạng xã hội trước đó
+    // vì browser history vẫn còn lưu trang đó dù SW đã redirect
+    history.back();
   }, 500);
 }
 
