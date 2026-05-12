@@ -1029,11 +1029,8 @@ async function saveShare() {
   toast('Đã lưu ✓');
 
   setTimeout(() => {
-    // Ẩn share view ngay lập tức
-    document.getElementById('share-view').classList.remove('active');
-    // Quay lại mạng xã hội
-    history.back();
-  }, 500);
+    window.close();
+  }, 600);
 }
 
 function handleShared(title, text, url, referrer) {
