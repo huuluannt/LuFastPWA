@@ -187,6 +187,14 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 .fab-search{background:#fff;color:#111;border:1px solid #ddd}
 .fab-add{background:#111;color:#fff}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px}
+/* SYNC STATUS */
+#sync-indicator{display:none;width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;margin-left:2px}
+#sync-indicator.syncing{display:block;background:#f59e0b;animation:pulse 1s infinite}
+#sync-indicator.ok{display:block;background:#22c55e}
+#sync-indicator.err{display:block;background:#e53935}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.dd-user{padding:10px 18px;font-size:13px;color:var(--text3);border-bottom:1px solid var(--border);display:none}
+.dd-user.show{display:block}
 </style>
 </head>
 <body>
@@ -203,8 +211,12 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
         oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
     </div>
+    <div id="sync-indicator" title="Sync status"></div>
     <button class="btn-more" onclick="toggleDd()">⋯</button>
     <div class="ddmenu" id="dd" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
+      <div class="dd-user" id="dd-user"></div>
+      <button onclick="closeDd();toggleLogin()">🔐 <span id="dd-login-lbl">Đăng nhập</span></button>
+      <button onclick="closeDd();manualSync()" id="dd-sync-btn" style="display:none">☁️ Sync ngay</button>
       <button onclick="exportNotes()">📤 Export</button>
       <button onclick="closeDd();document.getElementById('imp-file').click()">📥 Import</button>
       <button onclick="closeDd();openTrash()">🗑️ Trash</button>
@@ -244,8 +256,12 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
         oninput="syncSearch(this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x2" onclick="clearSearch2()">×</button>
     </div>
+    <div id="sync-indicator2" title="Sync status"></div>
     <button class="btn-more" onclick="toggleDd2()">⋯</button>
     <div class="ddmenu" id="dd2" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
+      <div class="dd-user" id="dd-user2"></div>
+      <button onclick="closeDd2();toggleLogin()">🔐 <span id="dd-login-lbl2">Đăng nhập</span></button>
+      <button onclick="closeDd2();manualSync()" id="dd-sync-btn2" style="display:none">☁️ Sync ngay</button>
       <button onclick="exportNotes()">📤 Export</button>
       <button onclick="closeDd2();document.getElementById('imp-file').click()">📥 Import</button>
       <button onclick="closeDd2();openTrash()">🗑️ Trash</button>
@@ -1155,6 +1171,293 @@ async function init(){
 }
 init();
 
+</script>
+<script type="module">
+import { initializeApp }          from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+                                   from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, writeBatch }
+                                   from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
+
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            'AIzaSyBKyq1leWeWu3PEwPrnbJE1IwN7O262i0g',
+  authDomain:        'lufast-e4e1a.firebaseapp.com',
+  projectId:         'lufast-e4e1a',
+  storageBucket:     'lufast-e4e1a.firebasestorage.app',
+  messagingSenderId: '982801803049',
+  appId:             '1:982801803049:web:1eeb7a1ccf6d669614f938'
+};
+const fbApp  = initializeApp(firebaseConfig);
+const auth   = getAuth(fbApp);
+const fbDb   = getFirestore(fbApp);
+
+// ── STATE ────────────────────────────────────────────────────────────────
+let fbUser = null;
+
+// ── SYNC INDICATOR ───────────────────────────────────────────────────────
+function setSyncStatus(s) {
+  ['sync-indicator','sync-indicator2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = '';
+    if (s) el.classList.add(s); // 'syncing' | 'ok' | 'err'
+  });
+}
+
+// ── UI UPDATE ────────────────────────────────────────────────────────────
+function updateAuthUI(user) {
+  const loggedIn = !!user;
+  const name     = user ? (user.displayName || user.email) : '';
+  ['dd-user','dd-user2'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = loggedIn ? `👤 ${name}` : '';
+    el.classList.toggle('show', loggedIn);
+  });
+  ['dd-login-lbl','dd-login-lbl2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = loggedIn ? 'Đăng xuất' : 'Đăng nhập';
+  });
+  ['dd-sync-btn','dd-sync-btn2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = loggedIn ? '' : 'none';
+  });
+  setSyncStatus(loggedIn ? 'ok' : '');
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────
+window.toggleLogin = async function() {
+  if (fbUser) {
+    if (!confirm('Đăng xuất khỏi sync?')) return;
+    await signOut(auth);
+    window.toast('Đã đăng xuất');
+  } else {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      window.toast('Đăng nhập thất bại');
+    }
+  }
+};
+
+onAuthStateChanged(auth, async user => {
+  fbUser = user;
+  updateAuthUI(user);
+  if (user) {
+    window.toast('Đã đăng nhập: ' + (user.displayName || user.email));
+    await runSync();
+  }
+});
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function notesCol()  { return collection(fbDb, 'users', fbUser.uid, 'notes'); }
+function trashCol()  { return collection(fbDb, 'users', fbUser.uid, 'trash'); }
+function noteDoc(id) { return doc(fbDb, 'users', fbUser.uid, 'notes', id); }
+function trashDoc(id){ return doc(fbDb, 'users', fbUser.uid, 'trash', id); }
+
+// ── PUSH 1 NOTE LÊN CLOUD ────────────────────────────────────────────────
+async function pushNote(n)      { await setDoc(noteDoc(n.id), n); }
+async function pushTrash(n)     { await setDoc(trashDoc(n.id), n); }
+async function deleteCloudNote(id)  { try { await deleteDoc(noteDoc(id)); } catch{} }
+async function deleteCloudTrash(id) { try { await deleteDoc(trashDoc(id)); } catch{} }
+
+// ── FULL SYNC ─────────────────────────────────────────────────────────────
+async function runSync() {
+  if (!fbUser) return;
+  setSyncStatus('syncing');
+  try {
+    // 1. Lấy tất cả từ cloud
+    const [cloudNotesSnap, cloudTrashSnap] = await Promise.all([
+      getDocs(notesCol()),
+      getDocs(trashCol())
+    ]);
+    const cloudNotes = cloudNotesSnap.docs.map(d => d.data());
+    const cloudTrash = cloudTrashSnap.docs.map(d => d.data());
+
+    // 2. Lấy local (dùng biến global của app)
+    const localNotes = window.notes || [];
+    const localTrash = window.trash || [];
+
+    // 3. Merge notes — last-write-wins theo updatedAt
+    const mergedNotes = mergeByUpdatedAt(localNotes, cloudNotes);
+    const mergedTrash = mergeByUpdatedAt(localTrash, cloudTrash);
+
+    // 4. Ghi batch lên cloud (chỉ những note mới hơn local)
+    const batch1 = writeBatch(fbDb);
+    for (const n of mergedNotes) {
+      const local = localNotes.find(x => x.id === n.id);
+      if (!local || n.updatedAt > (local.updatedAt || 0)) {
+        // cloud mới hơn → đã merge rồi, không cần push lại
+      } else {
+        batch1.set(noteDoc(n.id), n);
+      }
+    }
+    // Push những note local mới hơn cloud lên
+    for (const ln of localNotes) {
+      const cn = cloudNotes.find(x => x.id === ln.id);
+      if (!cn || ln.updatedAt > (cn.updatedAt || 0)) {
+        batch1.set(noteDoc(ln.id), ln);
+      }
+    }
+    await batch1.commit();
+
+    const batch2 = writeBatch(fbDb);
+    for (const lt of localTrash) {
+      const ct = cloudTrash.find(x => x.id === lt.id);
+      if (!ct || lt.deletedAt > (ct.deletedAt || 0)) {
+        batch2.set(trashDoc(lt.id), lt);
+      }
+    }
+    await batch2.commit();
+
+    // 5. Ghi merged data về IndexedDB và memory
+    let added = 0, updated = 0;
+    for (const n of mergedNotes) {
+      const local = localNotes.find(x => x.id === n.id);
+      if (!local) { await window.dbPut('notes', n); window.notes.push(n); added++; }
+      else if (n.updatedAt > local.updatedAt) {
+        await window.dbPut('notes', n);
+        window.notes = window.notes.map(x => x.id === n.id ? n : x);
+        updated++;
+      }
+    }
+    for (const n of mergedTrash) {
+      const local = localTrash.find(x => x.id === n.id);
+      if (!local) { await window.dbPut('trash', n); window.trash.push(n); }
+      else if (n.deletedAt > local.deletedAt) {
+        await window.dbPut('trash', n);
+        window.trash = window.trash.map(x => x.id === n.id ? n : x);
+      }
+    }
+
+    // 6. Re-render
+    window.notes.sort((a,b) => b.updatedAt - a.updatedAt);
+    window.renderList();
+
+    setSyncStatus('ok');
+    if (added || updated) window.toast(`Sync ✓ — +${added} mới, ${updated} cập nhật`);
+    else window.toast('Sync ✓ — Dữ liệu đã đồng bộ');
+
+  } catch(e) {
+    console.error('Sync error', e);
+    setSyncStatus('err');
+    window.toast('Sync thất bại — kiểm tra mạng');
+  }
+}
+
+function mergeByUpdatedAt(local, cloud) {
+  const map = new Map();
+  for (const n of local)  map.set(n.id, n);
+  for (const n of cloud)  {
+    const l = map.get(n.id);
+    if (!l || (n.updatedAt || 0) > (l.updatedAt || 0)) map.set(n.id, n);
+  }
+  return Array.from(map.values());
+}
+
+// ── MANUAL SYNC ───────────────────────────────────────────────────────────
+window.manualSync = async function() {
+  if (!fbUser) { window.toast('Vui lòng đăng nhập trước'); return; }
+  await runSync();
+};
+
+// ── AUTO SYNC SAU MỖI THAO TÁC ──────────────────────────────────────────
+// Patch các hàm write để tự push lên cloud sau khi ghi local
+const _origSaveQuick = window.saveQuick;
+window.saveQuick = async function() {
+  await _origSaveQuick.apply(this, arguments);
+  if (fbUser && window.notes.length) {
+    try { await pushNote(window.notes[0]); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
+  }
+};
+
+const _origSaveDetail = window.saveDetail;
+window.saveDetail = async function() {
+  await _origSaveDetail.apply(this, arguments);
+  if (fbUser && window.curNote) {
+    try { await pushNote(window.curNote); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
+  }
+};
+
+const _origDeleteNote = window.deleteNote;
+window.deleteNote = async function() {
+  const id = window.curNote?.id;
+  await _origDeleteNote.apply(this, arguments);
+  if (fbUser && id) {
+    try {
+      await deleteCloudNote(id);
+      if (window.trash.length) await pushTrash(window.trash[0]);
+      setSyncStatus('ok');
+    } catch { setSyncStatus('err'); }
+  }
+};
+
+const _origDeleteFromList = window.deleteFromList;
+window.deleteFromList = async function(noteId, event) {
+  await _origDeleteFromList.apply(this, [noteId, event]);
+  if (fbUser) {
+    try {
+      await deleteCloudNote(noteId);
+      const t = window.trash.find(x => x.id === noteId);
+      if (t) await pushTrash(t);
+      setSyncStatus('ok');
+    } catch { setSyncStatus('err'); }
+  }
+};
+
+const _origTogglePin = window.togglePin;
+window.togglePin = async function(noteId, event) {
+  await _origTogglePin.apply(this, [noteId, event]);
+  if (fbUser) {
+    const n = window.notes.find(x => x.id === noteId);
+    if (n) try { await pushNote(n); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
+  }
+};
+
+const _origRestoreNote = window.restoreNote;
+window.restoreNote = async function(id) {
+  await _origRestoreNote.apply(this, [id]);
+  if (fbUser) {
+    const n = window.notes.find(x => x.id === id);
+    if (n) try {
+      await pushNote(n);
+      await deleteCloudTrash(id);
+      setSyncStatus('ok');
+    } catch { setSyncStatus('err'); }
+  }
+};
+
+const _origPermDel = window.permDel;
+window.permDel = async function(id) {
+  await _origPermDel.apply(this, [id]);
+  if (fbUser) try { await deleteCloudTrash(id); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
+};
+
+const _origDelAllTrash = window.delAllTrash;
+window.delAllTrash = async function() {
+  await _origDelAllTrash.apply(this, arguments);
+  if (fbUser) try {
+    const snap = await getDocs(trashCol());
+    const b = writeBatch(fbDb);
+    snap.docs.forEach(d => b.delete(d.ref));
+    await b.commit();
+    setSyncStatus('ok');
+  } catch { setSyncStatus('err'); }
+};
+
+const _origSaveShare = window.saveShare;
+window.saveShare = async function() {
+  await _origSaveShare.apply(this, arguments);
+  if (fbUser && window.notes.length) {
+    try { await pushNote(window.notes[0]); setSyncStatus('ok'); } catch{ setSyncStatus('err'); }
+  }
+};
+
+// Export các hàm cần thiết ra window để module khác dùng
+window._fbPushNote  = pushNote;
+window._fbRunSync   = runSync;
 </script>
 </body>
 </html>
