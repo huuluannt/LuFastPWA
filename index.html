@@ -208,7 +208,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch" placeholder="Tìm ghi chú…v20" autocomplete="off"
+      <input type="search" id="srch" placeholder="Tìm ghi chú…v22" autocomplete="off"
         oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
     </div>
@@ -1182,6 +1182,16 @@ checkShareParams();
   window.visualViewport.addEventListener('scroll', adjustFooter);
 })();
 
+// ── KEYBOARD SHORTCUT ─────────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    if (document.getElementById('detail-view').classList.contains('active')) {
+      saveDetail();
+    }
+  }
+});
+
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init(){
   await openDB();
@@ -1336,7 +1346,14 @@ function startListeners() {
   unsubDeleted = onSnapshot(col('deletedNotes'), snap => {
     snap.docChanges().forEach(async change => {
       if (change.type === 'added') {
-        const { id } = change.doc.data();
+        const data = change.doc.data();
+        const { id, deletedAt } = data;
+
+        // Bỏ qua nếu document cũ hơn 5 phút
+        // (tránh xóa note local khi mới login và sync lần đầu)
+        const age = Date.now() - (deletedAt || 0);
+        if (age > 5 * 60 * 1000) return;
+
         // Xóa khỏi notes local nếu còn
         const inNotes = window.notes.find(x => x.id === id);
         if (inNotes) {
@@ -1430,6 +1447,9 @@ async function initialSync() {
     setSyncStatus('ok');
     if (added || updated) window.toast(`Sync ✓ — +${added} mới, ${updated} cập nhật`);
     else window.toast('Sync ✓');
+    
+    await purgeCloudTrash();
+    await purgeDeletedNotes();
   } catch(e) {
     console.error('Sync error', e);
     setSyncStatus('err');
@@ -1444,6 +1464,51 @@ window.manualSync = async function() {
   if (!fbUser) { window.toast('Vui lòng đăng nhập trước'); return; }
   await initialSync();
 };
+
+// ── PURGE CLOUD TRASH ─────────────────────────────────────────────────
+async function purgeCloudTrash() {
+  if (!fbUser) return;
+  try {
+    const now = Date.now();
+    const TTL = 30 * 24 * 60 * 60 * 1000;
+    const snap = await getDocs(col('trash'));
+    const batch = writeBatch(fbDb);
+    let count = 0;
+    snap.docs.forEach(d => {
+      const data = d.data();
+      if ((now - (data.deletedAt || 0)) >= TTL) {
+        batch.delete(d.ref);
+        // Ghi vào deletedNotes để thiết bị khác biết
+        batch.set(ref('deletedNotes', data.id), {
+          id: data.id, deletedAt: data.deletedAt
+        });
+        count++;
+      }
+    });
+    if (count > 0) await batch.commit();
+  } catch(e) { console.error('purgeCloudTrash error', e); }
+}
+
+// ── PURGE DELETED NOTES ───────────────────────────────────────────────
+async function purgeDeletedNotes() {
+  if (!fbUser) return;
+  try {
+    const now = Date.now();
+    // Giữ 60 ngày để đảm bảo mọi thiết bị đã sync được
+    const TTL = 60 * 24 * 60 * 60 * 1000;
+    const snap = await getDocs(col('deletedNotes'));
+    const batch = writeBatch(fbDb);
+    let count = 0;
+    snap.docs.forEach(d => {
+      const data = d.data();
+      if ((now - (data.deletedAt || 0)) >= TTL) {
+        batch.delete(d.ref);
+        count++;
+      }
+    });
+    if (count > 0) await batch.commit();
+  } catch(e) { console.error('purgeDeletedNotes error', e); }
+}
 
 // ── HELPERS GHI CLOUD ────────────────────────────────────────────────────
 async function cloudPut(name, data) {
