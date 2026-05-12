@@ -107,7 +107,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
 .link-copy:hover{background:var(--border);color:var(--text)}
 .link-copy:active{transform:scale(.95)}
 /* FOOTER */
-.footer{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;position:sticky;bottom:0;z-index:10}
+.footer{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .footer button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
 .footer .bsd{background:#111;color:#fff;border-color:#111}
 .footer .bdd{color:var(--danger);border-color:var(--danger)}
@@ -118,7 +118,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
   padding: 10px 1px;
 }
 /* TRASH FOOTER */
-.trashfooter{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;position:sticky;bottom:0;z-index:10}
+.trashfooter{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
 .trashfooter button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
 .trashfooter button:active{opacity:.7}
 /* TRASH */
@@ -208,7 +208,7 @@ mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
     <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
     <span class="app-lbl" onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
     <div class="srch-wrap">
-      <input type="search" id="srch" placeholder="Tìm ghi chú…v19" autocomplete="off"
+      <input type="search" id="srch" placeholder="Tìm ghi chú…v20" autocomplete="off"
         oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
       <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
     </div>
@@ -1160,6 +1160,27 @@ function checkShareParams() {
 
 // Gọi checkShareParams() ngay khi script chạy (không cần chờ init)
 checkShareParams();
+
+// ── FOOTER TRÁNH BÀN PHÍM ────────────────────────────────────────────────
+(function() {
+  if (!window.visualViewport) return;
+
+  function adjustFooter() {
+    const vv = window.visualViewport;
+    const windowHeight = window.innerHeight;
+    const viewportHeight = vv.height + vv.offsetTop;
+    const keyboardHeight = Math.max(0, windowHeight - viewportHeight);
+
+    document.querySelectorAll('.footer, .trashfooter').forEach(el => {
+      el.style.transform = keyboardHeight > 50
+        ? `translateY(-${keyboardHeight}px)` 
+        : '';
+    });
+  }
+
+  window.visualViewport.addEventListener('resize', adjustFooter);
+  window.visualViewport.addEventListener('scroll', adjustFooter);
+})();
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 async function init(){
