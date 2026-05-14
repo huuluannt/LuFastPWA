@@ -181,7 +181,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      z-index: 200;
+      z-index: 400;
       min-width: 150px;
       overflow: hidden;
       display: none
@@ -214,7 +214,6 @@
       background: var(--surface)
     }
 
-    /* OVERLAY */
     #overlay {
       display: none;
       position: fixed;
@@ -224,7 +223,8 @@
     }
 
     #overlay.on {
-      display: block
+      display: block;
+      pointer-events: none
     }
 
     /* QUICKNOTE */
@@ -732,6 +732,12 @@
     }
 
     .footer .bsd {
+      background: var(--bg);
+      color: var(--text);
+      border-color: var(--border)
+    }
+
+    .footer .bsd.dirty {
       background: #111;
       color: #fff;
       border-color: #111
@@ -1169,7 +1175,7 @@
 
 <body>
   <div id="toast-wrap"></div>
-  <div id="overlay" onclick="closeDd()"></div>
+  <div id="overlay"></div>
 
   <!-- MAIN VIEW -->
   <div class="view active" id="main-view">
@@ -1180,7 +1186,7 @@
       <span class="app-lbl"
         onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
       <div class="srch-wrap">
-        <input type="search" id="srch" placeholder="Tìm ghi chú…v28" autocomplete="off" oninput="doSearch()"
+        <input type="search" id="srch" placeholder="Tìm ghi chú…v31" autocomplete="off" oninput="doSearch()"
           onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
         <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
       </div>
@@ -1257,7 +1263,8 @@
       <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24">
           <path d="M13 3L4 14h8l-1 7 9-11h-8z" />
         </svg></div>
-      <span class="app-lbl" onclick="goHome()">LuFast</span>
+      <span class="app-lbl"
+        onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
       <div class="srch-wrap">
         <input type="search" id="srch2" placeholder="Tìm ghi chú…" autocomplete="off" oninput="syncSearch(this.value)"
           onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
@@ -1316,13 +1323,13 @@
           <div class="inp-wrap" style="flex:1">
             <textarea id="d-title" placeholder="Tiêu đề…"
               style="width:100%;height:100%;resize:none;padding:8px 26px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:600;outline:none;background:var(--bg);transition:border .2s"
-              oninput="chkX('d-title','dx-t')" rows="1"></textarea>
+              oninput="chkX('d-title','dx-t');markDirty()" rows="1"></textarea>
             <button class="ix" id="dx-t" onclick="clrInp('d-title','dx-t')">×</button>
           </div>
           <div class="dtime" id="d-time"></div>
         </div>
       </div>
-      <textarea class="dta" id="d-content" placeholder="Nội dung…" oninput="updateLinkList()"></textarea>
+      <textarea class="dta" id="d-content" placeholder="Nội dung…" oninput="updateLinkList();markDirty()"></textarea>
       <div id="link-list-container" style="display:none;margin-top:8px;">
         <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">🔗 Links trong ghi chú:</div>
         <div id="link-list" style="display:flex;flex-direction:column;gap:4px;"></div>
@@ -1406,7 +1413,13 @@
 
   <!-- FLOATING ACTION BUTTONS -->
   <div class="fab-container">
-    <button class="fab fab-search" onclick="focusSearch()" title="Tìm kiếm">🔍</button>
+    <button class="fab fab-search" onclick="focusSearch()" title="Tìm kiếm">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+    </button>
     <button class="fab fab-add" onclick="focusQuickNote()" title="Thêm ghi chú">+</button>
   </div>
 
@@ -1480,6 +1493,9 @@
     }
 
     function chkX(inpId, btnId) { const v = document.getElementById(inpId).value; document.getElementById(btnId).style.display = v ? 'block' : 'none' }
+    function markDirty() {
+      document.querySelector('#detail-view .bsd').classList.add('dirty');
+    }
 
     function extractUrls(text) {
       const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
@@ -1552,8 +1568,8 @@
     // ── DROPDOWN ──────────────────────────────────────────────────────────────
     function toggleDd() { const d = document.getElementById('dd'), o = document.getElementById('overlay'); d.classList.contains('open') ? (d.classList.remove('open'), o.classList.remove('on')) : (d.classList.add('open'), o.classList.add('on')) }
     function closeDd() { document.getElementById('dd').classList.remove('open'); document.getElementById('overlay').classList.remove('on') }
-    function toggleDd2() { const d = document.getElementById('dd2'); d.classList.contains('open') ? d.classList.remove('open') : d.classList.add('open') }
-    function closeDd2() { document.getElementById('dd2').classList.remove('open') }
+    function toggleDd2() { const d = document.getElementById('dd2'), o = document.getElementById('overlay'); d.classList.contains('open') ? (d.classList.remove('open'), o.classList.remove('on')) : (d.classList.add('open'), o.classList.add('on')) }
+    function closeDd2() { document.getElementById('dd2').classList.remove('open'); document.getElementById('overlay').classList.remove('on') }
 
     // ── QUICKNOTE ─────────────────────────────────────────────────────────────
     function clearQuick() { document.getElementById('qn-content').value = ''; document.getElementById('qn-t').value = ''; document.getElementById('qx-t').style.display = 'none'; quickImg = null; setQThumb(null); document.getElementById('qn-content').focus() }
@@ -1652,6 +1668,7 @@
       setThumb(curNote.img);
       updateLinkList();
       showView('detail-view');
+      document.querySelector('#detail-view .bsd').classList.remove('dirty');
     }
     function setThumb(src) { const img = document.getElementById('dthumb-img'), ph = document.getElementById('dthumb-ph'); if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none' } else { img.style.display = 'none'; ph.style.display = 'flex' } }
     function onThumbClick() { curNote && curNote.img ? openLb(curNote.img) : triggerImg('detail') }
@@ -1663,7 +1680,13 @@
       if (!curNote || !originalNote) return false;
       const currentTitle = document.getElementById('d-title').value.trim();
       const currentContent = document.getElementById('d-content').value.trim();
-      return currentTitle !== originalNote.title || currentContent !== originalNote.content || curNote.img !== originalNote.img;
+      const dirty = currentTitle !== originalNote.title || currentContent !== originalNote.content || curNote.img !== originalNote.img;
+      const btn = document.querySelector('#detail-view .bsd');
+      if (btn) {
+        if (dirty) btn.classList.add('dirty');
+        else btn.classList.remove('dirty');
+      }
+      return dirty;
     }
     function showUnsavedPopup() { document.getElementById('unsaved-popup').classList.add('active') }
     function hideUnsavedPopup() { document.getElementById('unsaved-popup').classList.remove('active') }
@@ -1806,6 +1829,7 @@
       originalNote = { ...curNote };
       document.getElementById('d-time').textContent = fmt(curNote.updatedAt);
       toast('Đã lưu ✓');
+      document.querySelector('#detail-view .bsd').classList.remove('dirty');
     }
     function copyDetail() { const t = document.getElementById('d-title').value, c = document.getElementById('d-content').value; navigator.clipboard.writeText((t ? t + '\n' : '') + c).then(() => toast('Đã copy ✓')).catch(() => toast('Copy thất bại')) }
     function copyFirstLine() {
@@ -1901,6 +1925,7 @@
             curNote.img = ev.target.result;
             setThumb(curNote.img);
             notes = notes.map(n => n.id === curNote.id ? curNote : n);
+            markDirty();
             toast('Đã chọn ảnh — nhấn Save để lưu');
           }
         };
@@ -1915,6 +1940,7 @@
           curNote.img = ev.target.result;
           setThumb(curNote.img);
           notes = notes.map(n => n.id === curNote.id ? curNote : n);
+          markDirty();
           toast('Đã chọn ảnh thay thế — nhấn Save để lưu');
         };
         r.readAsDataURL(blob);
@@ -2001,6 +2027,7 @@
         setThumb(null);
         notes = notes.map(n => n.id === curNote.id ? curNote : n);
         closeLb();
+        markDirty();
         toast('Đã xóa ảnh — nhấn Save để lưu');
       } else {
         if (!confirm('Xóa ảnh này?')) return;
@@ -2199,6 +2226,25 @@
       }
     });
 
+    // ── CLOSE DROPDOWN KHI CLICK NGOÀI ───────────────────────────────────────
+    document.addEventListener('click', function (e) {
+      const dd = document.getElementById('dd');
+      const dd2 = document.getElementById('dd2');
+      const btnMore = document.querySelector('#main-hdr .btn-more');
+      const btnMore2 = document.querySelector('#detail-view .btn-more');
+
+      if (dd.classList.contains('open')) {
+        if (!dd.contains(e.target) && e.target !== btnMore) {
+          closeDd();
+        }
+      }
+      if (dd2.classList.contains('open')) {
+        if (!dd2.contains(e.target) && e.target !== btnMore2) {
+          closeDd2();
+        }
+      }
+    });
+
     // ── CHECK SHARE PARAMS ─────────────────────────────────────────────────────
     function checkShareParams() {
       const p = new URLSearchParams(location.search);
@@ -2231,19 +2277,24 @@
 
       function adjustFooter() {
         const vv = window.visualViewport;
-        const windowHeight = window.innerHeight;
-        const viewportHeight = vv.height + vv.offsetTop;
-        const keyboardHeight = Math.max(0, windowHeight - viewportHeight);
+        const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
 
         document.querySelectorAll('.footer, .trashfooter').forEach(el => {
           el.style.transform = keyboardHeight > 50
             ? `translateY(-${keyboardHeight}px)`
-            : '';
+            : 'translateY(0)';  // ← reset rõ ràng về 0 thay vì string rỗng
         });
+
+        // View All button cũng bị ảnh hưởng — không cần xử lý vì nó nằm trong scroll area
       }
 
       window.visualViewport.addEventListener('resize', adjustFooter);
       window.visualViewport.addEventListener('scroll', adjustFooter);
+
+      // Reset khi focus ra khỏi input (bàn phím đóng)
+      document.addEventListener('focusout', () => {
+        setTimeout(adjustFooter, 100);
+      });
     })();
 
     // ── KEYBOARD SHORTCUT ─────────────────────────────────────────────────────
