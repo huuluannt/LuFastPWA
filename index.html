@@ -1154,7 +1154,7 @@
     }
 
     .dd-user {
-      padding: 10px 18px;
+      padding: 10px 14px;
       font-size: 13px;
       color: var(--text3);
       border-bottom: 1px solid var(--border);
@@ -1180,7 +1180,7 @@
       <span class="app-lbl"
         onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
       <div class="srch-wrap">
-        <input type="search" id="srch" placeholder="Tìm ghi chú…v23" autocomplete="off" oninput="doSearch()"
+        <input type="search" id="srch" placeholder="Tìm ghi chú…v28" autocomplete="off" oninput="doSearch()"
           onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
         <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
       </div>
@@ -1188,11 +1188,43 @@
       <button class="btn-more" onclick="toggleDd()">⋯</button>
       <div class="ddmenu" id="dd" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
         <div class="dd-user" id="dd-user"></div>
-        <button onclick="closeDd();toggleLogin()">🔐 <span id="dd-login-lbl">Đăng nhập</span></button>
-        <button onclick="closeDd();manualSync()" id="dd-sync-btn" style="display:none">☁️ Sync ngay</button>
-        <button onclick="exportNotes()">📤 Export</button>
-        <button onclick="closeDd();document.getElementById('imp-file').click()">📥 Import</button>
-        <button onclick="closeDd();openTrash()">🗑️ Trash</button>
+        <button onclick="closeDd();toggleLogin()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span id="dd-login-lbl">Đăng nhập</span>
+        </button>
+        <button onclick="exportNotes()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          Export
+        </button>
+        <button onclick="closeDd();document.getElementById('imp-file').click()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Import
+        </button>
+        <button onclick="closeDd();openTrash()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
+          Trash
+        </button>
       </div>
     </div>
     <input type="file" id="imp-file" accept=".lufast" style="display:none" onchange="importNotes(event)">
@@ -1235,11 +1267,43 @@
       <button class="btn-more" onclick="toggleDd2()">⋯</button>
       <div class="ddmenu" id="dd2" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
         <div class="dd-user" id="dd-user2"></div>
-        <button onclick="closeDd2();toggleLogin()">🔐 <span id="dd-login-lbl2">Đăng nhập</span></button>
-        <button onclick="closeDd2();manualSync()" id="dd-sync-btn2" style="display:none">☁️ Sync ngay</button>
-        <button onclick="exportNotes()">📤 Export</button>
-        <button onclick="closeDd2();document.getElementById('imp-file').click()">📥 Import</button>
-        <button onclick="closeDd2();openTrash()">🗑️ Trash</button>
+        <button onclick="closeDd2();toggleLogin()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span id="dd-login-lbl2">Đăng nhập</span>
+        </button>
+        <button onclick="exportNotes()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          Export
+        </button>
+        <button onclick="closeDd2();document.getElementById('imp-file').click()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Import
+        </button>
+        <button onclick="closeDd2();openTrash()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
+          Trash
+        </button>
       </div>
     </div>
     <div class="dbody">
@@ -1283,7 +1347,11 @@
       <span class="app-lbl" onclick="goHome()">LuFast</span>
       <span style="flex:1;text-align:right;font-size:14px;color:var(--text2)">Thùng rác</span>
     </div>
-    <div class="trash-bar"><button class="btn-dall" onclick="delAllTrash()">Xóa tất cả trong Trash</button></div>
+    <div class="trash-bar" style="display:flex;gap:8px">
+      <button class="btn-dall" style="flex:1;min-width:0" onclick="delAllTrash()">Xóa tất cả trong Trash</button>
+      <button onclick="goHome()"
+        style="flex:1;min-width:0;padding:10px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:14px;font-weight:600;cursor:pointer">Back</button>
+    </div>
     <div class="tlist" id="tlist"></div>
     <div class="trashfooter">
       <button onclick="goHome()">Back</button>
@@ -1552,9 +1620,9 @@
           <div class="ntime">${fmt(n.updatedAt)}</div>
         </div>
         <div class="nactions">
-          <button class="btn-copy1" onclick="copyFirstLineFromList('${n.id}',event)" title="Copy dòng đầu">📋</button>
-          <button class="btn-pin ${n.pinned ? 'pinned' : ''}" onclick="togglePin('${n.id}',event)" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}">${n.pinned ? '📌' : '📍'}</button>
-          <button class="btn-trash" onclick="deleteFromList('${n.id}',event)" title="Xóa">🗑️</button>
+          <button class="btn-copy1" onclick="copyFirstLineFromList('${n.id}',event)" title="Copy dòng đầu"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <button class="btn-pin ${n.pinned ? 'pinned' : ''}" onclick="togglePin('${n.id}',event)" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}"><svg width="15" height="15" viewBox="0 0 24 24" fill="${n.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg></button>
+          <button class="btn-trash" onclick="deleteFromList('${n.id}',event)" title="Xóa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div></div>`
         }
         if (!results) {
@@ -1666,9 +1734,9 @@
           <div class="ntime">${fmt(n.updatedAt)}</div>
         </div>
         <div class="nactions">
-          <button class="btn-copy1" onclick="event.stopPropagation();copyFirstLineFromList('${n.id}',event)" title="Copy dòng đầu">📋</button>
-          <button class="btn-pin ${n.pinned ? 'pinned' : ''}" onclick="event.stopPropagation();togglePin('${n.id}',event)" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}">${n.pinned ? '📌' : '📍'}</button>
-          <button class="btn-trash" onclick="event.stopPropagation();deleteFromList('${n.id}',event)" title="Xóa">🗑️</button>
+          <button class="btn-copy1" onclick="event.stopPropagation();copyFirstLineFromList('${n.id}',event)" title="Copy dòng đầu"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <button class="btn-pin ${n.pinned ? 'pinned' : ''}" onclick="event.stopPropagation();togglePin('${n.id}',event)" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}"><svg width="15" height="15" viewBox="0 0 24 24" fill="${n.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg></button>
+          <button class="btn-trash" onclick="event.stopPropagation();deleteFromList('${n.id}',event)" title="Xóa"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div></div>`
         }
       }
@@ -2289,6 +2357,80 @@
       renderList();
       await checkShareInbox();
     }
+
+    // ── DRAGGABLE FAB ─────────────────────────────────────────────────────────
+    (function () {
+      const fab = document.querySelector('.fab-container');
+      let startY = 0, startTop = 0, isDragging = false, hasMoved = false;
+
+      function getTop() {
+        const rect = fab.getBoundingClientRect();
+        return rect.top;
+      }
+
+      function clampTop(top) {
+        const fabH = fab.offsetHeight;
+        const winH = window.innerHeight;
+        return Math.max(60, Math.min(winH - fabH - 16, top));
+      }
+
+      function onStart(clientY) {
+        isDragging = true;
+        hasMoved = false;
+        startY = clientY;
+        startTop = getTop();
+        fab.style.transition = 'none';
+        fab.style.bottom = 'auto';
+        fab.style.top = startTop + 'px';
+      }
+
+      function onMove(clientY) {
+        if (!isDragging) return;
+        const dy = clientY - startY;
+        if (Math.abs(dy) > 4) hasMoved = true;
+        fab.style.top = clampTop(startTop + dy) + 'px';
+      }
+
+      function onEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        // Lưu vị trí vào localStorage
+        localStorage.setItem('lufast_fab_top', fab.style.top);
+      }
+
+      // Touch
+      fab.addEventListener('touchstart', e => {
+        onStart(e.touches[0].clientY);
+      }, { passive: true });
+      fab.addEventListener('touchmove', e => {
+        onMove(e.touches[0].clientY);
+        if (hasMoved) e.preventDefault();
+      }, { passive: false });
+      fab.addEventListener('touchend', onEnd);
+
+      // Mouse (desktop)
+      fab.addEventListener('mousedown', e => {
+        onStart(e.clientY);
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        onMove(e.clientY);
+      });
+      document.addEventListener('mouseup', onEnd);
+
+      // Chặn click khi đã kéo
+      fab.addEventListener('click', e => {
+        if (hasMoved) { e.stopPropagation(); hasMoved = false; }
+      }, true);
+
+      // Khôi phục vị trí đã lưu
+      const saved = localStorage.getItem('lufast_fab_top');
+      if (saved) {
+        fab.style.bottom = 'auto';
+        fab.style.top = clampTop(parseInt(saved)) + 'px';
+      }
+    })();
     init();
 
   </script>
@@ -2343,7 +2485,14 @@
       ['dd-user', 'dd-user2'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.textContent = on ? `👤 ${name}` : '';
+        if (on) {
+          const avatar = user.photoURL
+            ? `<img src="${user.photoURL}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+            : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+          el.innerHTML = `<div style="display:flex;align-items:center;gap:8px">${avatar}<span style="font-size:13px;color:var(--text)">${name}</span></div>`;
+        } else {
+          el.innerHTML = '';
+        }
         el.classList.toggle('show', on);
       });
       ['dd-login-lbl', 'dd-login-lbl2'].forEach(id => {
