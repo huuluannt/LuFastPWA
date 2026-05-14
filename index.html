@@ -1,805 +1,1801 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#ffffff">
-<title>LuFast</title>
-<link rel="manifest" href="manifest.json">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{--bg:#fff;--surface:#f8f8f8;--border:#ebebeb;--text:#111;--text2:#666;--text3:#aaa;--danger:#e53935;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08);--hh:56px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;flex-direction:column}
-/* TOAST */
-#toast-wrap{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:6px}
-.toast{background:rgba(20,20,20,.88);color:#fff;padding:7px 18px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;white-space:nowrap}
-.toast.show{opacity:1}
-/* VIEWS */
-.view{display:none;flex-direction:column;height:100dvh;overflow:hidden}
-.view.active{display:flex}
-/* HEADER */
-.hdr{height:var(--hh);min-height:var(--hh);display:flex;align-items:center;padding:0 12px;gap:8px;border-bottom:1px solid var(--border);background:var(--bg);z-index:10;flex-shrink:0;position:relative}
-.logo{width:32px;height:32px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
-.logo svg{width:18px;height:18px;fill:#fff}
-.app-lbl{font-size:17px;font-weight:700;cursor:pointer;letter-spacing:-.5px;flex-shrink:0}
-.srch-wrap{flex:1;position:relative;display:flex;align-items:center}
-.srch-wrap input{width:100%;padding:7px 28px 7px 10px;border:1.5px solid var(--border);border-radius:20px;font-size:14px;background:var(--surface);outline:none;transition:border .2s;-webkit-appearance:none}
-.srch-wrap input::-webkit-search-cancel-button{display:none}
-.srch-wrap input:focus{border-color:#bbb}
-.srch-x{position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;line-height:1;display:none;padding:2px 4px}
-.btn-more{background:none;border:none;cursor:pointer;padding:6px 4px;font-size:20px;color:var(--text2);flex-shrink:0}
-/* DROPDOWN */
-.ddmenu{position:absolute;right:12px;top:calc(var(--hh) - 4px);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:200;min-width:150px;overflow:hidden;display:none}
-.ddmenu.open{display:block}
-.ddmenu button{display:flex;align-items:center;gap:10px;width:100%;padding:13px 18px;background:none;border:none;font-size:15px;cursor:pointer;color:var(--text);text-align:left;border-bottom:1px solid var(--border)}
-.ddmenu button:last-child{border-bottom:none}
-.ddmenu button:active{background:var(--surface)}
-/* OVERLAY */
-#overlay{display:none;position:fixed;inset:0;z-index:100;pointer-events:none}
-#overlay.on{display:block}
-/* QUICKNOTE */
-.qnote{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0}
-.qn-r1{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.btn-img{background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap}
-.qthumb-box{width:55px;height:55px;border-radius:6px;overflow:hidden;flex-shrink:0;cursor:pointer;background:var(--surface);border:1.5px solid var(--border)}
-.qthumb-box img{width:100%;height:100%;object-fit:cover;display:none}
-.qthumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text3)}
-.inp-wrap{flex:1;position:relative}
-.inp-wrap input{width:100%;padding:7px 26px 7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--bg);transition:border .2s}
-.inp-wrap textarea{width:100%;padding:7px 26px 7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:var(--bg);transition:border .2s;resize:none;line-height:1.4;font-family:inherit;overflow-y:auto}
-.qn-r1 .inp-wrap textarea{height:55px}
-.dtc .inp-wrap textarea{height:90px}
-.inp-wrap input:focus{border-color:#bbb}
-.ix{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;display:none;line-height:1;padding:2px}
-.qn-r2{display:flex;gap:8px;align-items:stretch}
-.qn-ta{flex:1;resize:none;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;min-height:72px;max-height:100px;background:var(--bg);line-height:1.5;transition:border .2s}
-.qn-ta:focus{border-color:#bbb}
-.qbtns{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
-.qbtns button{flex:1;padding:0 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:var(--bg);color:var(--text)}
-.qbtns .bsave{background:#111;color:#fff;border-color:#111}
-.qbtns button:active{opacity:.7}
-/* LIST */
-.listnote{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
-.ncard{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:2px;margin-bottom:3px;cursor:pointer;display:flex;gap:8px;align-items:flex-start}
-.ncard.pinned{background:#fffbeb;border-color:#fde68a}
-.ncard:active{box-shadow:var(--shadow)}
-.nthumb{width:55px;height:55px;border-radius:6px;background-size:cover;background-position:center;flex-shrink:0}
-.nbody{flex:1;min-width:0}
-.ntitle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.ncontent{font-size:13px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.ntime{font-size:11px;color:var(--text3);margin-top:2px}
-.nactions{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
-.nactions button{width:24px;height:24px;border:none;border-radius:4px;background:var(--surface);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.nactions button:hover{background:var(--border)}
-.nactions button:active{transform:scale(.9)}
-.nactions .btn-pin{color:var(--text2)}
-.nactions .btn-pin.pinned{color:#f39c12}
-.nactions .btn-trash{color:var(--text2)}
-.nactions .btn-trash:hover{color:var(--danger)}
-.view-all{text-align:center;padding:12px;color:var(--text2);font-size:14px}
-.view-all span{text-decoration:underline;cursor:pointer}
-.empty{text-align:center;padding:48px 24px;color:var(--text3)}
-.empty .eico{font-size:40px;margin-bottom:12px}
-.srch-hdr{padding:8px 12px 2px;font-size:13px;color:var(--text3);flex-shrink:0;display:none}
-mark.hl{background:#ffe082;border-radius:2px;padding:0 1px}
-/* DETAIL */
-.dbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px}
-.dthumb-row{display:flex;gap:10px;align-items:stretch;margin-bottom:12px}
-.dthumb-box{width:90px;height:90px;border-radius:var(--radius);overflow:hidden;flex-shrink:0;cursor:pointer;background:var(--surface);border:1.5px solid var(--border)}
-.dthumb-box img{width:100%;height:100%;object-fit:cover;display:none}
-.dthumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--text3)}
-.dtc{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:space-between}
-.dtc .inp-wrap input{width:100%;height:100%;padding:8px 26px 8px 10px;font-size:15px;font-weight:600}
-.dtime{font-size:11px;color:var(--text3)}
-.dta{width:100%;resize:none;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit;outline:none;background:var(--bg);min-height:200px;line-height:1.6;transition:border .2s}
-.dta:focus{border-color:#bbb}
-/* LINK LIST */
-#link-list-container{padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
-.link-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
-.link-item:hover{border-color:#bbb;box-shadow:0 2px 4px rgba(0,0,0,.05)}
-.link-item:active{transform:scale(.98)}
-.link-icon{color:var(--text2);font-size:14px;flex-shrink:0}
-.link-url{flex:1;font-size:13px;color:var(--text);text-decoration:none;word-break:break-all;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.link-url:hover{text-decoration:underline}
-.link-copy{padding:4px 8px;font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text2);cursor:pointer;transition:all .2s}
-.link-copy:hover{background:var(--border);color:var(--text)}
-.link-copy:active{transform:scale(.95)}
-/* FOOTER */
-.footer{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
-.footer button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
-.footer .bsd{background:#111;color:#fff;border-color:#111}
-.footer .bdd{color:var(--danger);border-color:var(--danger)}
-.footer button:active{opacity:.7}
-/* 5 nút footer detail view */
-#detail-view .footer button {
-  font-size: 11.5px;
-  padding: 10px 1px;
-}
-/* TRASH FOOTER */
-.trashfooter{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0}
-.trashfooter button{flex:1;padding:10px 2px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
-.trashfooter button:active{opacity:.7}
-/* TRASH */
-.trash-bar{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
-.btn-dall{width:100%;padding:10px;background:#fff;border:1.5px solid var(--danger);color:var(--danger);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-.tlist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
-.tcard{border:1px solid var(--border);border-radius:var(--radius);padding:11px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
-.tcbody{flex:1;min-width:0}
-.tctitle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tccontent{font-size:13px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px}
-.tcbtns{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
-.tcbtns button{padding:6px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text)}
-.tcbtns .brest{border-color:#111;color:#111}
-.tcbtns .bdel{border-color:var(--danger);color:var(--danger)}
-/* LIGHTBOX */
-#lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:1000;flex-direction:column;touch-action:none}
-#lb.open{display:flex}
-#lb-wrap{flex:1;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer}
-#lb-img{max-width:100%;max-height:100%;object-fit:contain;user-select:none;pointer-events:none;transform-origin:center center;will-change:transform}
-#lb-acts{display:flex;gap:8px;padding:14px 12px;flex-shrink:0;justify-content:center;flex-wrap:wrap}
-#lb-acts button{padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
-/* SHARE */
-#share-view {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  z-index: 500;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-#share-view.active { display: flex; }
-/* Header nhỏ phía trên quicknote trong share view */
-#share-view::before {
-  content: '⚡ LuFast — Lưu nhanh';
-  display: block;
-  font-size: 17px;
-  font-weight: 700;
-  margin-bottom: 14px;
-  letter-spacing: -.3px;
-}
-/* UNSAVED CHANGES POPUP */
-#unsaved-popup{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;flex-direction:column;align-items:center;justify-content:center;padding:20px}
-#unsaved-popup.active{display:flex}
-.popup-content{background:var(--bg);border-radius:var(--radius);padding:20px;max-width:320px;width:100%;box-shadow:var(--shadow)}
-.popup-title{font-size:16px;font-weight:600;margin-bottom:8px}
-.popup-text{font-size:14px;color:var(--text2);margin-bottom:16px}
-.popup-buttons{display:flex;gap:8px}
-.popup-buttons button{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--border)}
-.popup-buttons .btn-save{background:#111;color:#fff;border-color:#111}
-.popup-buttons .btn-discard{color:var(--danger);border-color:var(--danger)}
-.popup-buttons button:active{opacity:.7}
-/* SEARCH OVERLAY */
-#search-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:400;flex-direction:column}
-#search-overlay.active{display:flex}
-.search-overlay-content{flex:1;background:var(--bg);margin-top:var(--hh);overflow:hidden;display:flex;flex-direction:column}
-.search-overlay-header{padding:12px;border-bottom:1px solid var(--border);flex-shrink:0}
-.search-overlay-results{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px 12px 16px}
-.search-overlay-empty{text-align:center;padding:48px 24px;color:var(--text3)}
-/* FLOATING ACTION BUTTONS */
-.fab-container{position:fixed;bottom:80px;right:20px;z-index:300;display:flex;flex-direction:column;gap:12px;align-items:flex-end}
-.fab{width:56px;height:56px;border-radius:50%;background:#111;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,.15);transition:all .2s}
-.fab:hover{transform:scale(1.1);box-shadow:0 6px 16px rgba(0,0,0,.2)}
-.fab:active{transform:scale(.95)}
-.fab-search{background:#fff;color:#111;border:1px solid #ddd}
-.fab-add{background:#111;color:#fff}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px}
-/* SYNC STATUS */
-#sync-indicator{display:none;width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;margin-left:2px}
-#sync-indicator.syncing{display:block;background:#f59e0b;animation:pulse 1s infinite}
-#sync-indicator.ok{display:block;background:#22c55e}
-#sync-indicator.err{display:block;background:#e53935}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.dd-user{padding:10px 18px;font-size:13px;color:var(--text3);border-bottom:1px solid var(--border);display:none}
-.dd-user.show{display:block}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff">
+  <title>LuFast</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    :root {
+      --bg: #fff;
+      --surface: #f8f8f8;
+      --border: #ebebeb;
+      --text: #111;
+      --text2: #666;
+      --text3: #aaa;
+      --danger: #e53935;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0, 0, 0, .08);
+      --hh: 56px
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column
+    }
+
+    /* TOAST */
+    #toast-wrap {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px
+    }
+
+    .toast {
+      background: rgba(20, 20, 20, .88);
+      color: #fff;
+      padding: 7px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity .25s;
+      white-space: nowrap
+    }
+
+    .toast.show {
+      opacity: 1
+    }
+
+    /* VIEWS */
+    .view {
+      display: none;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden
+    }
+
+    .view.active {
+      display: flex
+    }
+
+    /* HEADER */
+    .hdr {
+      height: var(--hh);
+      min-height: var(--hh);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      z-index: 10;
+      flex-shrink: 0;
+      position: relative
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: #111;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0
+    }
+
+    .logo svg {
+      width: 18px;
+      height: 18px;
+      fill: #fff
+    }
+
+    .app-lbl {
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: -.5px;
+      flex-shrink: 0
+    }
+
+    .srch-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center
+    }
+
+    .srch-wrap input {
+      width: 100%;
+      padding: 7px 28px 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 14px;
+      background: var(--surface);
+      outline: none;
+      transition: border .2s;
+      -webkit-appearance: none
+    }
+
+    .srch-wrap input::-webkit-search-cancel-button {
+      display: none
+    }
+
+    .srch-wrap input:focus {
+      border-color: #bbb
+    }
+
+    .srch-x {
+      position: absolute;
+      right: 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text3);
+      font-size: 18px;
+      line-height: 1;
+      display: none;
+      padding: 6px
+    }
+
+    .btn-more {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 4px;
+      font-size: 20px;
+      color: var(--text2);
+      flex-shrink: 0
+    }
+
+    /* DROPDOWN */
+    .ddmenu {
+      position: absolute;
+      right: 12px;
+      top: calc(var(--hh) - 4px);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: 200;
+      min-width: 150px;
+      overflow: hidden;
+      display: none
+    }
+
+    .ddmenu.open {
+      display: block
+    }
+
+    .ddmenu button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 13px 18px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      color: var(--text);
+      text-align: left;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .ddmenu button:last-child {
+      border-bottom: none
+    }
+
+    .ddmenu button:active {
+      background: var(--surface)
+    }
+
+    /* OVERLAY */
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none
+    }
+
+    #overlay.on {
+      display: block
+    }
+
+    /* QUICKNOTE */
+    .qnote {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0
+    }
+
+    .qn-r1 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px
+    }
+
+    .btn-img {
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      white-space: nowrap
+    }
+
+    .qthumb-box {
+      width: 55px;
+      height: 55px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1.5px solid var(--border)
+    }
+
+    .qthumb-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none
+    }
+
+    .qthumb-ph {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--text3)
+    }
+
+    .inp-wrap {
+      flex: 1;
+      position: relative
+    }
+
+    .inp-wrap input {
+      width: 100%;
+      padding: 7px 26px 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      background: var(--bg);
+      transition: border .2s
+    }
+
+    .inp-wrap textarea {
+      width: 100%;
+      padding: 7px 26px 7px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      background: var(--bg);
+      transition: border .2s;
+      resize: none;
+      line-height: 1.4;
+      font-family: inherit;
+      overflow-y: auto
+    }
+
+    .qn-r1 .inp-wrap textarea {
+      height: 55px
+    }
+
+    .dtc .inp-wrap textarea {
+      height: 90px
+    }
+
+    .inp-wrap input:focus {
+      border-color: #bbb
+    }
+
+    .ix {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text3);
+      font-size: 18px;
+      display: none;
+      line-height: 1;
+      padding: 6px
+    }
+
+    .qn-r2 {
+      display: flex;
+      gap: 8px;
+      align-items: stretch
+    }
+
+    .qn-ta {
+      flex: 1;
+      resize: none;
+      padding: 8px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      min-height: 72px;
+      max-height: 100px;
+      background: var(--bg);
+      line-height: 1.5;
+      transition: border .2s
+    }
+
+    .qn-ta:focus {
+      border-color: #bbb
+    }
+
+    .qbtns {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0
+    }
+
+    .qbtns button {
+      flex: 1;
+      padding: 0 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .qbtns .bsave {
+      background: #111;
+      color: #fff;
+      border-color: #111
+    }
+
+    .qbtns button:active {
+      opacity: .7
+    }
+
+    /* LIST */
+    .listnote {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 8px 12px 16px
+    }
+
+    .ncard {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2px;
+      margin-bottom: 3px;
+      cursor: pointer;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start
+    }
+
+    .ncard.pinned {
+      background: #fffbeb;
+      border-color: #fde68a
+    }
+
+    .ncard:active {
+      box-shadow: var(--shadow)
+    }
+
+    .nthumb {
+      width: 55px;
+      height: 55px;
+      border-radius: 6px;
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0
+    }
+
+    .nbody {
+      flex: 1;
+      min-width: 0
+    }
+
+    .ntitle {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px
+    }
+
+    .ncontent {
+      font-size: 13px;
+      color: var(--text2);
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden
+    }
+
+    .ntime {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 2px
+    }
+
+    .nactions {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      flex-shrink: 0;
+      align-items: center
+    }
+
+    .nactions button {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s
+    }
+
+    .nactions button:hover {
+      background: var(--border)
+    }
+
+    .nactions button:active {
+      transform: scale(.9)
+    }
+
+    .nactions .btn-pin {
+      color: var(--text2)
+    }
+
+    .nactions .btn-pin.pinned {
+      color: #f39c12
+    }
+
+    .nactions .btn-trash {
+      color: var(--text2)
+    }
+
+    .nactions .btn-trash:hover {
+      color: var(--danger)
+    }
+
+    .nactions .btn-copy1 {
+      color: var(--text2)
+    }
+
+    .nactions .btn-copy1:hover {
+      color: #111
+    }
+
+    .view-all {
+      text-align: center;
+      padding: 12px;
+      color: var(--text2);
+      font-size: 14px
+    }
+
+    .view-all span {
+      text-decoration: underline;
+      cursor: pointer
+    }
+
+    .empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text3)
+    }
+
+    .empty .eico {
+      font-size: 40px;
+      margin-bottom: 12px
+    }
+
+    .srch-hdr {
+      padding: 8px 12px 2px;
+      font-size: 13px;
+      color: var(--text3);
+      flex-shrink: 0;
+      display: none
+    }
+
+    mark.hl {
+      background: #ffe082;
+      border-radius: 2px;
+      padding: 0 1px
+    }
+
+    /* DETAIL */
+    .dbody {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px
+    }
+
+    .dthumb-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 12px
+    }
+
+    .dthumb-box {
+      width: 90px;
+      height: 90px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1.5px solid var(--border)
+    }
+
+    .dthumb-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none
+    }
+
+    .dthumb-ph {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: var(--text3)
+    }
+
+    .dtc {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      justify-content: space-between
+    }
+
+    .dtc .inp-wrap input {
+      width: 100%;
+      height: 100%;
+      padding: 8px 26px 8px 10px;
+      font-size: 15px;
+      font-weight: 600
+    }
+
+    .dtime {
+      font-size: 11px;
+      color: var(--text3)
+    }
+
+    .dta {
+      width: 100%;
+      resize: none;
+      padding: 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      background: var(--bg);
+      min-height: 200px;
+      line-height: 1.6;
+      transition: border .2s
+    }
+
+    .dta:focus {
+      border-color: #bbb
+    }
+
+    /* LINK LIST */
+    #link-list-container {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface)
+    }
+
+    .link-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--bg);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .link-item:hover {
+      border-color: #bbb;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .05)
+    }
+
+    .link-item:active {
+      transform: scale(.98)
+    }
+
+    .link-icon {
+      color: var(--text2);
+      font-size: 14px;
+      flex-shrink: 0
+    }
+
+    .link-url {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      text-decoration: none;
+      word-break: break-all;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .link-url:hover {
+      text-decoration: underline
+    }
+
+    .link-copy {
+      padding: 4px 8px;
+      font-size: 11px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .link-copy:hover {
+      background: var(--border);
+      color: var(--text)
+    }
+
+    .link-copy:active {
+      transform: scale(.95)
+    }
+
+    /* FOOTER */
+    .footer {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0
+    }
+
+    .footer button {
+      flex: 1;
+      padding: 10px 2px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .footer .bsd {
+      background: #111;
+      color: #fff;
+      border-color: #111
+    }
+
+    .footer .bdd {
+      color: var(--danger);
+      border-color: var(--danger)
+    }
+
+    .footer button:active {
+      opacity: .7
+    }
+
+    /* 6 nút footer detail view */
+    #detail-view .footer button {
+      font-size: 10.5px;
+      padding: 10px 1px;
+    }
+
+    /* TRASH FOOTER */
+    .trashfooter {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0
+    }
+
+    .trashfooter button {
+      flex: 1;
+      padding: 10px 2px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .trashfooter button:active {
+      opacity: .7
+    }
+
+    /* TRASH */
+    .trash-bar {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0
+    }
+
+    .btn-dall {
+      width: 100%;
+      padding: 10px;
+      background: #fff;
+      border: 1.5px solid var(--danger);
+      color: var(--danger);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    .tlist {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 8px 12px 16px
+    }
+
+    .tcard {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 11px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px
+    }
+
+    .tcbody {
+      flex: 1;
+      min-width: 0
+    }
+
+    .tctitle {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .tccontent {
+      font-size: 13px;
+      color: var(--text2);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 3px
+    }
+
+    .tcbtns {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0
+    }
+
+    .tcbtns button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .tcbtns .brest {
+      border-color: #111;
+      color: #111
+    }
+
+    .tcbtns .bdel {
+      border-color: var(--danger);
+      color: var(--danger)
+    }
+
+    /* LIGHTBOX */
+    #lb {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .96);
+      z-index: 1000;
+      flex-direction: column;
+      touch-action: none
+    }
+
+    #lb.open {
+      display: flex
+    }
+
+    #lb-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer
+    }
+
+    #lb-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      user-select: none;
+      pointer-events: none;
+      transform-origin: center center;
+      will-change: transform
+    }
+
+    #lb-acts {
+      display: flex;
+      gap: 8px;
+      padding: 14px 12px;
+      flex-shrink: 0;
+      justify-content: center;
+      flex-wrap: wrap
+    }
+
+    #lb-acts button {
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, .15);
+      border: none;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer
+    }
+
+    /* SHARE */
+    #share-view {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 500;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    #share-view.active {
+      display: flex;
+    }
+
+    /* Header nhỏ phía trên quicknote trong share view */
+    #share-view::before {
+      content: '⚡ LuFast — Lưu nhanh';
+      display: block;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      letter-spacing: -.3px;
+    }
+
+    /* UNSAVED CHANGES POPUP */
+    #unsaved-popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .4);
+      z-index: 600;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px
+    }
+
+    #unsaved-popup.active {
+      display: flex
+    }
+
+    .popup-content {
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      max-width: 320px;
+      width: 100%;
+      box-shadow: var(--shadow)
+    }
+
+    .popup-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px
+    }
+
+    .popup-text {
+      font-size: 14px;
+      color: var(--text2);
+      margin-bottom: 16px
+    }
+
+    .popup-buttons {
+      display: flex;
+      gap: 8px
+    }
+
+    .popup-buttons button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border)
+    }
+
+    .popup-buttons .btn-save {
+      background: #111;
+      color: #fff;
+      border-color: #111
+    }
+
+    .popup-buttons .btn-discard {
+      color: var(--danger);
+      border-color: var(--danger)
+    }
+
+    .popup-buttons button:active {
+      opacity: .7
+    }
+
+    /* SEARCH OVERLAY */
+    #search-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .3);
+      z-index: 400;
+      flex-direction: column
+    }
+
+    #search-overlay.active {
+      display: flex
+    }
+
+    .search-overlay-content {
+      flex: 1;
+      background: var(--bg);
+      margin-top: var(--hh);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column
+    }
+
+    .search-overlay-header {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0
+    }
+
+    .search-overlay-results {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 8px 12px 16px
+    }
+
+    .search-overlay-empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text3)
+    }
+
+    /* FLOATING ACTION BUTTONS */
+    .fab-container {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-end
+    }
+
+    .fab {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #111;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+      transition: all .2s
+    }
+
+    .fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, .2)
+    }
+
+    .fab:active {
+      transform: scale(.95)
+    }
+
+    .fab-search {
+      background: #fff;
+      color: #111;
+      border: 1px solid #ddd
+    }
+
+    .fab-add {
+      background: #111;
+      color: #fff
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 2px
+    }
+
+    /* SYNC STATUS */
+    #sync-indicator {
+      display: none;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ccc;
+      flex-shrink: 0;
+      margin-left: 2px
+    }
+
+    #sync-indicator.syncing {
+      display: block;
+      background: #f59e0b;
+      animation: pulse 1s infinite
+    }
+
+    #sync-indicator.ok {
+      display: block;
+      background: #22c55e
+    }
+
+    #sync-indicator.err {
+      display: block;
+      background: #e53935
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    .dd-user {
+      padding: 10px 18px;
+      font-size: 13px;
+      color: var(--text3);
+      border-bottom: 1px solid var(--border);
+      display: none
+    }
+
+    .dd-user.show {
+      display: block
+    }
+  </style>
 </head>
+
 <body>
-<div id="toast-wrap"></div>
-<div id="overlay" onclick="closeDd()"></div>
+  <div id="toast-wrap"></div>
+  <div id="overlay" onclick="closeDd()"></div>
 
-<!-- MAIN VIEW -->
-<div class="view active" id="main-view">
-  <div class="hdr" id="main-hdr">
-    <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
-    <span class="app-lbl" onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
-    <div class="srch-wrap">
-      <input type="search" id="srch" placeholder="Tìm ghi chú…v22" autocomplete="off"
-        oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
-      <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
-    </div>
-    <div id="sync-indicator" title="Sync status"></div>
-    <button class="btn-more" onclick="toggleDd()">⋯</button>
-    <div class="ddmenu" id="dd" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
-      <div class="dd-user" id="dd-user"></div>
-      <button onclick="closeDd();toggleLogin()">🔐 <span id="dd-login-lbl">Đăng nhập</span></button>
-      <button onclick="closeDd();manualSync()" id="dd-sync-btn" style="display:none">☁️ Sync ngay</button>
-      <button onclick="exportNotes()">📤 Export</button>
-      <button onclick="closeDd();document.getElementById('imp-file').click()">📥 Import</button>
-      <button onclick="closeDd();openTrash()">🗑️ Trash</button>
-    </div>
-  </div>
-  <input type="file" id="imp-file" accept=".lufast" style="display:none" onchange="importNotes(event)">
-  <div class="qnote">
-    <div class="qn-r1">
-      <div class="qthumb-box" id="qthumb" onclick="onQThumbClick()">
-        <div class="qthumb-ph" id="qthumb-ph">📷</div>
-        <img id="qthumb-img">
+  <!-- MAIN VIEW -->
+  <div class="view active" id="main-view">
+    <div class="hdr" id="main-hdr">
+      <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24">
+          <path d="M13 3L4 14h8l-1 7 9-11h-8z" />
+        </svg></div>
+      <span class="app-lbl"
+        onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
+      <div class="srch-wrap">
+        <input type="search" id="srch" placeholder="Tìm ghi chú…v23" autocomplete="off" oninput="doSearch()"
+          onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
+        <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
       </div>
-      <div class="inp-wrap">
-        <textarea id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')" rows="1"></textarea>
-        <button class="ix" id="qx-t" onclick="clrInp('qn-t','qx-t')">×</button>
+      <div id="sync-indicator" title="Sync status"></div>
+      <button class="btn-more" onclick="toggleDd()">⋯</button>
+      <div class="ddmenu" id="dd" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
+        <div class="dd-user" id="dd-user"></div>
+        <button onclick="closeDd();toggleLogin()">🔐 <span id="dd-login-lbl">Đăng nhập</span></button>
+        <button onclick="closeDd();manualSync()" id="dd-sync-btn" style="display:none">☁️ Sync ngay</button>
+        <button onclick="exportNotes()">📤 Export</button>
+        <button onclick="closeDd();document.getElementById('imp-file').click()">📥 Import</button>
+        <button onclick="closeDd();openTrash()">🗑️ Trash</button>
       </div>
     </div>
-    <div class="qn-r2">
-      <textarea class="qn-ta" id="qn-content" placeholder="Nội dung…" rows="3"></textarea>
-      <div class="qbtns">
-        <button onclick="clearQuick()">Clear</button>
-        <button class="bsave" onclick="saveQuick()">Save</button>
-      </div>
-    </div>
-  </div>
-  <div class="srch-hdr" id="srch-hdr"></div>
-  <div class="listnote" id="listnote"></div>
-</div>
-
-<!-- DETAIL VIEW -->
-<div class="view" id="detail-view">
-  <div class="hdr">
-    <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
-    <span class="app-lbl" onclick="goHome()">LuFast</span>
-    <div class="srch-wrap">
-      <input type="search" id="srch2" placeholder="Tìm ghi chú…" autocomplete="off"
-        oninput="syncSearch(this.value)" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
-      <button class="srch-x" id="srch-x2" onclick="clearSearch2()">×</button>
-    </div>
-    <div id="sync-indicator2" title="Sync status"></div>
-    <button class="btn-more" onclick="toggleDd2()">⋯</button>
-    <div class="ddmenu" id="dd2" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
-      <div class="dd-user" id="dd-user2"></div>
-      <button onclick="closeDd2();toggleLogin()">🔐 <span id="dd-login-lbl2">Đăng nhập</span></button>
-      <button onclick="closeDd2();manualSync()" id="dd-sync-btn2" style="display:none">☁️ Sync ngay</button>
-      <button onclick="exportNotes()">📤 Export</button>
-      <button onclick="closeDd2();document.getElementById('imp-file').click()">📥 Import</button>
-      <button onclick="closeDd2();openTrash()">🗑️ Trash</button>
-    </div>
-  </div>
-  <div class="dbody">
-    <div class="dthumb-row">
-      <div class="dthumb-box" id="dthumb" onclick="onThumbClick()">
-        <div class="dthumb-ph" id="dthumb-ph">📷</div>
-        <img id="dthumb-img">
-      </div>
-      <div class="dtc">
-        <div class="inp-wrap" style="flex:1">
-          <textarea id="d-title" placeholder="Tiêu đề…" style="width:100%;height:100%;resize:none;padding:8px 26px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:600;outline:none;background:var(--bg);transition:border .2s" oninput="chkX('d-title','dx-t')" rows="1"></textarea>
-          <button class="ix" id="dx-t" onclick="clrInp('d-title','dx-t')">×</button>
+    <input type="file" id="imp-file" accept=".lufast" style="display:none" onchange="importNotes(event)">
+    <div class="qnote">
+      <div class="qn-r1">
+        <div class="qthumb-box" id="qthumb" onclick="onQThumbClick()">
+          <div class="qthumb-ph" id="qthumb-ph">📷</div>
+          <img id="qthumb-img">
         </div>
-        <div class="dtime" id="d-time"></div>
+        <div class="inp-wrap">
+          <textarea id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')" rows="1"></textarea>
+          <button class="ix" id="qx-t" onclick="clrInp('qn-t','qx-t')">×</button>
+        </div>
+      </div>
+      <div class="qn-r2">
+        <textarea class="qn-ta" id="qn-content" placeholder="Nội dung…" rows="3"></textarea>
+        <div class="qbtns">
+          <button onclick="clearQuick()">Clear</button>
+          <button class="bsave" onclick="saveQuick()">Save</button>
+        </div>
       </div>
     </div>
-    <textarea class="dta" id="d-content" placeholder="Nội dung…" oninput="updateLinkList()"></textarea>
-    <div id="link-list-container" style="display:none;margin-top:8px;">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">🔗 Links trong ghi chú:</div>
-      <div id="link-list" style="display:flex;flex-direction:column;gap:4px;"></div>
-    </div>
+    <div class="srch-hdr" id="srch-hdr"></div>
+    <div class="listnote" id="listnote"></div>
   </div>
-  <div class="footer">
-    <button onclick="copyFirstLine()">Copy 1st</button>
-    <button onclick="copyDetail()">Copy All</button>
-    <button class="bdd" onclick="deleteNote()">Delete</button>
-    <button class="bsd" onclick="saveDetail()">Save</button>
-    <button onclick="backDetail()">Back</button>
-  </div>
-</div>
 
-<!-- TRASH VIEW -->
-<div class="view" id="trash-view">
-  <div class="hdr">
-    <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>
-    <span class="app-lbl" onclick="goHome()">LuFast</span>
-    <span style="flex:1;text-align:right;font-size:14px;color:var(--text2)">Thùng rác</span>
-  </div>
-  <div class="trash-bar"><button class="btn-dall" onclick="delAllTrash()">Xóa tất cả trong Trash</button></div>
-  <div class="tlist" id="tlist"></div>
-  <div class="trashfooter">
-    <button onclick="goHome()">Back</button>
-  </div>
-</div>
-
-<!-- SHARE VIEW -->
-<div id="share-view">
-  <!-- Chỉ có QuickNote, giống y chang main view -->
-  <div class="qnote" style="width:100%;max-width:480px;border:none">
-    <div class="qn-r1">
-      <div class="qthumb-box" id="sq-thumb" onclick="onSQThumbClick()">
-        <div class="qthumb-ph" id="sq-thumb-ph">📷</div>
-        <img id="sq-thumb-img">
+  <!-- DETAIL VIEW -->
+  <div class="view" id="detail-view">
+    <div class="hdr">
+      <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24">
+          <path d="M13 3L4 14h8l-1 7 9-11h-8z" />
+        </svg></div>
+      <span class="app-lbl" onclick="goHome()">LuFast</span>
+      <div class="srch-wrap">
+        <input type="search" id="srch2" placeholder="Tìm ghi chú…" autocomplete="off" oninput="syncSearch(this.value)"
+          onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
+        <button class="srch-x" id="srch-x2" onclick="clearSearch2()">×</button>
       </div>
-      <div class="inp-wrap">
-        <textarea id="sh-t" placeholder="Tiêu đề…" oninput="chkX('sh-t','shx-t')" rows="1"></textarea>
-        <button class="ix" id="shx-t" onclick="clrInp('sh-t','shx-t')">×</button>
+      <div id="sync-indicator2" title="Sync status"></div>
+      <button class="btn-more" onclick="toggleDd2()">⋯</button>
+      <div class="ddmenu" id="dd2" style="position:absolute;right:12px;top:calc(var(--hh) - 4px)">
+        <div class="dd-user" id="dd-user2"></div>
+        <button onclick="closeDd2();toggleLogin()">🔐 <span id="dd-login-lbl2">Đăng nhập</span></button>
+        <button onclick="closeDd2();manualSync()" id="dd-sync-btn2" style="display:none">☁️ Sync ngay</button>
+        <button onclick="exportNotes()">📤 Export</button>
+        <button onclick="closeDd2();document.getElementById('imp-file').click()">📥 Import</button>
+        <button onclick="closeDd2();openTrash()">🗑️ Trash</button>
       </div>
     </div>
-    <div class="qn-r2">
-      <textarea class="qn-ta" id="sh-c" placeholder="Nội dung…" rows="3"
-        onclick="focusShareLine2(event)"
-        onfocus="focusShareLine2(event)"></textarea>
-      <div class="qbtns">
-        <button onclick="clearShare()">Clear</button>
-        <button class="bsave" onclick="saveShare()">Save</button>
+    <div class="dbody">
+      <div class="dthumb-row">
+        <div class="dthumb-box" id="dthumb" onclick="onThumbClick()">
+          <div class="dthumb-ph" id="dthumb-ph">📷</div>
+          <img id="dthumb-img">
+        </div>
+        <div class="dtc">
+          <div class="inp-wrap" style="flex:1">
+            <textarea id="d-title" placeholder="Tiêu đề…"
+              style="width:100%;height:100%;resize:none;padding:8px 26px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:600;outline:none;background:var(--bg);transition:border .2s"
+              oninput="chkX('d-title','dx-t')" rows="1"></textarea>
+            <button class="ix" id="dx-t" onclick="clrInp('d-title','dx-t')">×</button>
+          </div>
+          <div class="dtime" id="d-time"></div>
+        </div>
+      </div>
+      <textarea class="dta" id="d-content" placeholder="Nội dung…" oninput="updateLinkList()"></textarea>
+      <div id="link-list-container" style="display:none;margin-top:8px;">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">🔗 Links trong ghi chú:</div>
+        <div id="link-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+    </div>
+    <div class="footer">
+      <button onclick="copyFirstLine()">Copy 1st</button>
+      <button onclick="copyDetail()">Copy All</button>
+      <button onclick="clearDetailContent()">Clear</button>
+      <button class="bdd" onclick="deleteNote()">Delete</button>
+      <button class="bsd" onclick="saveDetail()">Save</button>
+      <button onclick="backDetail()">Back</button>
+    </div>
+  </div>
+
+  <!-- TRASH VIEW -->
+  <div class="view" id="trash-view">
+    <div class="hdr">
+      <div class="logo" onclick="goHome()"><svg viewBox="0 0 24 24">
+          <path d="M13 3L4 14h8l-1 7 9-11h-8z" />
+        </svg></div>
+      <span class="app-lbl" onclick="goHome()">LuFast</span>
+      <span style="flex:1;text-align:right;font-size:14px;color:var(--text2)">Thùng rác</span>
+    </div>
+    <div class="trash-bar"><button class="btn-dall" onclick="delAllTrash()">Xóa tất cả trong Trash</button></div>
+    <div class="tlist" id="tlist"></div>
+    <div class="trashfooter">
+      <button onclick="goHome()">Back</button>
+    </div>
+  </div>
+
+  <!-- SHARE VIEW -->
+  <div id="share-view">
+    <!-- Chỉ có QuickNote, giống y chang main view -->
+    <div class="qnote" style="width:100%;max-width:480px;border:none">
+      <div class="qn-r1">
+        <div class="qthumb-box" id="sq-thumb" onclick="onSQThumbClick()">
+          <div class="qthumb-ph" id="sq-thumb-ph">📷</div>
+          <img id="sq-thumb-img">
+        </div>
+        <div class="inp-wrap">
+          <textarea id="sh-t" placeholder="Tiêu đề…" oninput="chkX('sh-t','shx-t')" rows="1"></textarea>
+          <button class="ix" id="shx-t" onclick="clrInp('sh-t','shx-t')">×</button>
+        </div>
+      </div>
+      <div class="qn-r2">
+        <textarea class="qn-ta" id="sh-c" placeholder="Nội dung…" rows="3" onclick="focusShareLine2(event)"
+          onfocus="focusShareLine2(event)"></textarea>
+        <div class="qbtns">
+          <button onclick="clearShare()">Clear</button>
+          <button class="bsave" onclick="saveShare()">Save</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- UNSAVED CHANGES POPUP -->
-<div id="unsaved-popup">
-  <div class="popup-content">
-    <div class="popup-title">Có thay đổi chưa lưu</div>
-    <div class="popup-text">Bạn có muốn lưu các thay đổi trước khi rời đi?</div>
-    <div class="popup-buttons">
-      <button class="btn-save" onclick="handleSave()">Lưu</button>
-      <button class="btn-discard" onclick="handleDiscard()">Bỏ qua</button>
-      <button onclick="cancelBack()">Hủy</button>
+  <!-- UNSAVED CHANGES POPUP -->
+  <div id="unsaved-popup">
+    <div class="popup-content">
+      <div class="popup-title">Có thay đổi chưa lưu</div>
+      <div class="popup-text">Bạn có muốn lưu các thay đổi trước khi rời đi?</div>
+      <div class="popup-buttons">
+        <button class="btn-save" onclick="handleSave()">Lưu</button>
+        <button class="btn-discard" onclick="handleDiscard()">Bỏ qua</button>
+        <button onclick="cancelBack()">Hủy</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- SEARCH OVERLAY -->
-<div id="search-overlay" onclick="hideSearchOverlay()">
-  <div class="search-overlay-content" onclick="event.stopPropagation()">
-    <div class="search-overlay-header" id="search-overlay-header"></div>
-    <div class="search-overlay-results" id="search-overlay-results"></div>
+  <!-- SEARCH OVERLAY -->
+  <div id="search-overlay" onclick="hideSearchOverlay()">
+    <div class="search-overlay-content" onclick="event.stopPropagation()">
+      <div class="search-overlay-header" id="search-overlay-header"></div>
+      <div class="search-overlay-results" id="search-overlay-results"></div>
+    </div>
   </div>
-</div>
 
-<!-- FLOATING ACTION BUTTONS -->
-<div class="fab-container">
-  <button class="fab fab-search" onclick="focusSearch()" title="Tìm kiếm">🔍</button>
-  <button class="fab fab-add" onclick="focusQuickNote()" title="Thêm ghi chú">+</button>
-</div>
-
-<!-- LIGHTBOX -->
-<div id="lb">
-  <div id="lb-wrap">
-    <img id="lb-img" src="">
+  <!-- FLOATING ACTION BUTTONS -->
+  <div class="fab-container">
+    <button class="fab fab-search" onclick="focusSearch()" title="Tìm kiếm">🔍</button>
+    <button class="fab fab-add" onclick="focusQuickNote()" title="Thêm ghi chú">+</button>
   </div>
-  <div id="lb-acts">
-    <button onclick="lbCopy()">Copy</button>
-    <button onclick="lbDownload()">Download</button>
-    <button onclick="lbReplace()">Replace</button>
-    <button onclick="lbDelete()">Delete</button>
-    <button onclick="closeLb()">✕ Đóng</button>
+
+  <!-- LIGHTBOX -->
+  <div id="lb">
+    <div id="lb-wrap">
+      <img id="lb-img" src="">
+    </div>
+    <div id="lb-acts">
+      <button onclick="lbCopy()">Copy</button>
+      <button onclick="lbDownload()">Download</button>
+      <button onclick="lbReplace()">Replace</button>
+      <button onclick="lbDelete()">Delete</button>
+      <button onclick="closeLb()">✕ Đóng</button>
+    </div>
   </div>
-</div>
 
-<input type="file" id="add-img" accept="image/*" style="display:none" onchange="handleAddImg(event)">
-<input type="file" id="rep-img" accept="image/*" style="display:none" onchange="handleRepImg(event)">
+  <input type="file" id="add-img" accept="image/*" style="display:none" onchange="handleAddImg(event)">
+  <input type="file" id="rep-img" accept="image/*" style="display:none" onchange="handleRepImg(event)">
 
-<script>
-// ── SERVICE WORKER REGISTRATION ────────────────────────────────────────────────
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(() => {
-    console.log('Service Worker registration failed');
-  });
-}
+  <script>
+    // ── SERVICE WORKER REGISTRATION ────────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {
+        console.log('Service Worker registration failed');
+      });
+    }
 
 
-// ── DB ────────────────────────────────────────────────────────────────────
-let db;
-function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open('LuFastDB',1);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('notes'))d.createObjectStore('notes',{keyPath:'id'});if(!d.objectStoreNames.contains('trash'))d.createObjectStore('trash',{keyPath:'id'})};r.onsuccess=e=>{db=e.target.result;res()};r.onerror=()=>rej()})}
-function dbAll(s){return new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej()})}
-function dbPut(s,o){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(o);r.onsuccess=()=>res();r.onerror=()=>rej()})}
-function dbDel(s,id){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(id);r.onsuccess=()=>res();r.onerror=()=>rej()})}
-function dbClear(s){return new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).clear();r.onsuccess=()=>res();r.onerror=()=>rej()})}
+    // ── DB ────────────────────────────────────────────────────────────────────
+    let db;
+    function openDB() { return new Promise((res, rej) => { const r = indexedDB.open('LuFastDB', 1); r.onupgradeneeded = e => { const d = e.target.result; if (!d.objectStoreNames.contains('notes')) d.createObjectStore('notes', { keyPath: 'id' }); if (!d.objectStoreNames.contains('trash')) d.createObjectStore('trash', { keyPath: 'id' }) }; r.onsuccess = e => { db = e.target.result; res() }; r.onerror = () => rej() }) }
+    function dbAll(s) { return new Promise((res, rej) => { const r = db.transaction(s, 'readonly').objectStore(s).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => rej() }) }
+    function dbPut(s, o) { return new Promise((res, rej) => { const r = db.transaction(s, 'readwrite').objectStore(s).put(o); r.onsuccess = () => res(); r.onerror = () => rej() }) }
+    function dbDel(s, id) { return new Promise((res, rej) => { const r = db.transaction(s, 'readwrite').objectStore(s).delete(id); r.onsuccess = () => res(); r.onerror = () => rej() }) }
+    function dbClear(s) { return new Promise((res, rej) => { const r = db.transaction(s, 'readwrite').objectStore(s).clear(); r.onsuccess = () => res(); r.onerror = () => rej() }) }
 
-// ── STATE ─────────────────────────────────────────────────────────────────
-const TRASH_TTL = 30 * 24 * 60 * 60 * 1000;
-let notes=[],trash=[],curNote=null,showAll=false,curSearchWords=null,imgCtx=null,quickImg=null,originalNote=null;
+    // ── STATE ─────────────────────────────────────────────────────────────────
+    const TRASH_TTL = 30 * 24 * 60 * 60 * 1000;
+    let notes = [], trash = [], curNote = null, showAll = false, curSearchWords = null, imgCtx = null, quickImg = null, originalNote = null;
 
-async function purgeExpiredTrash() {
-  const now = Date.now();
-  const expired = trash.filter(n => (now - n.deletedAt) >= TRASH_TTL);
-  if (!expired.length) return;
-  for (const n of expired) {
-    await dbDel('trash', n.id);
-  }
-  trash = trash.filter(n => (now - n.deletedAt) < TRASH_TTL);
-}
+    async function purgeExpiredTrash() {
+      const now = Date.now();
+      const expired = trash.filter(n => (now - n.deletedAt) >= TRASH_TTL);
+      if (!expired.length) return;
+      for (const n of expired) {
+        await dbDel('trash', n.id);
+      }
+      trash = trash.filter(n => (now - n.deletedAt) < TRASH_TTL);
+    }
 
-// ── TOAST ─────────────────────────────────────────────────────────────────
-function toast(msg,dur=2200){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.getElementById('toast-wrap').appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},dur)}
+    // ── TOAST ─────────────────────────────────────────────────────────────────
+    function toast(msg, dur = 2200) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.getElementById('toast-wrap').appendChild(t); requestAnimationFrame(() => t.classList.add('show')); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300) }, dur) }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function fmt(ts){const d=new Date(ts),diff=Date.now()-d;if(diff<60000)return'Vừa xong';if(diff<3600000)return Math.floor(diff/60000)+'p trước';if(diff<86400000)return Math.floor(diff/3600000)+'h trước';return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}
+    // ── UTILS ─────────────────────────────────────────────────────────────────
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7) }
+    function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+    function fmt(ts) { const d = new Date(ts), diff = Date.now() - d; if (diff < 60000) return 'Vừa xong'; if (diff < 3600000) return Math.floor(diff / 60000) + 'p trước'; if (diff < 86400000) return Math.floor(diff / 3600000) + 'h trước'; return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }
 
-const DM={à:'a',á:'a',ả:'a',ã:'a',ạ:'a',ă:'a',ắ:'a',ặ:'a',ằ:'a',ẳ:'a',ẵ:'a',â:'a',ấ:'a',ầ:'a',ẩ:'a',ẫ:'a',ậ:'a',è:'e',é:'e',ẻ:'e',ẽ:'e',ẹ:'e',ê:'e',ế:'e',ề:'e',ể:'e',ễ:'e',ệ:'e',ì:'i',í:'i',ỉ:'i',ĩ:'i',ị:'i',ò:'o',ó:'o',ỏ:'o',õ:'o',ọ:'o',ô:'o',ố:'o',ồ:'o',ổ:'o',ỗ:'o',ộ:'o',ơ:'o',ớ:'o',ờ:'o',ở:'o',ỡ:'o',ợ:'o',ù:'u',ú:'u',ủ:'u',ũ:'u',ụ:'u',ư:'u',ứ:'u',ừ:'u',ử:'u',ữ:'u',ự:'u',ỳ:'y',ý:'y',ỷ:'y',ỹ:'y',ỵ:'y',đ:'d'};
-function nd(s){return(s||'').toLowerCase().replace(/[^\u0000-\u007E]/g,m=>DM[m]||m)}
+    const DM = { à: 'a', á: 'a', ả: 'a', ã: 'a', ạ: 'a', ă: 'a', ắ: 'a', ặ: 'a', ằ: 'a', ẳ: 'a', ẵ: 'a', â: 'a', ấ: 'a', ầ: 'a', ẩ: 'a', ẫ: 'a', ậ: 'a', è: 'e', é: 'e', ẻ: 'e', ẽ: 'e', ẹ: 'e', ê: 'e', ế: 'e', ề: 'e', ể: 'e', ễ: 'e', ệ: 'e', ì: 'i', í: 'i', ỉ: 'i', ĩ: 'i', ị: 'i', ò: 'o', ó: 'o', ỏ: 'o', õ: 'o', ọ: 'o', ô: 'o', ố: 'o', ồ: 'o', ổ: 'o', ỗ: 'o', ộ: 'o', ơ: 'o', ớ: 'o', ờ: 'o', ở: 'o', ỡ: 'o', ợ: 'o', ù: 'u', ú: 'u', ủ: 'u', ũ: 'u', ụ: 'u', ư: 'u', ứ: 'u', ừ: 'u', ử: 'u', ữ: 'u', ự: 'u', ỳ: 'y', ý: 'y', ỷ: 'y', ỹ: 'y', ỵ: 'y', đ: 'd' };
+    function nd(s) { return (s || '').toLowerCase().replace(/[^\u0000-\u007E]/g, m => DM[m] || m) }
 
-function scoreNote(n,words){const tn=nd(n.title),cn=nd(n.content||'');let s=0;for(const w of words){if(tn.includes(w))s+=2;else if(cn.includes(w))s+=1;else return -1}return s}
+    function scoreNote(n, words) { const tn = nd(n.title), cn = nd(n.content || ''); let s = 0; for (const w of words) { if (tn.includes(w)) s += 2; else if (cn.includes(w)) s += 1; else return -1 } return s }
 
-function hlText(text,words){if(!words||!words.length)return linkify(esc(text));const raw=esc(text);if(!raw)return raw;let r=raw;for(const w of words){if(!w)continue;const re=new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');r=r.replace(re,'<mark class="hl">$1</mark>')}return linkify(r)}
-function linkify(text){
-  const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
-  return text.replace(urlRegex, function(url) {
-    return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline">' + url + '</a>';
-  });
-}
+    function hlText(text, words) { if (!words || !words.length) return linkify(esc(text)); const raw = esc(text); if (!raw) return raw; let r = raw; for (const w of words) { if (!w) continue; const re = new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'); r = r.replace(re, '<mark class="hl">$1</mark>') } return linkify(r) }
+    function linkify(text) {
+      const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+      return text.replace(urlRegex, function (url) {
+        return '<a href="' + url + '" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline">' + url + '</a>';
+      });
+    }
 
-function chkX(inpId,btnId){const v=document.getElementById(inpId).value;document.getElementById(btnId).style.display=v?'block':'none'}
+    function chkX(inpId, btnId) { const v = document.getElementById(inpId).value; document.getElementById(btnId).style.display = v ? 'block' : 'none' }
 
-function extractUrls(text){
-  const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
-  const matches = text.match(urlRegex);
-  return matches ? [...new Set(matches)] : []; // Remove duplicates
-}
+    function extractUrls(text) {
+      const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+      const matches = text.match(urlRegex);
+      return matches ? [...new Set(matches)] : []; // Remove duplicates
+    }
 
-function updateLinkList(){
-  const content = document.getElementById('d-content').value;
-  const container = document.getElementById('link-list-container');
-  const listEl = document.getElementById('link-list');
-  
-  if(!content){
-    container.style.display = 'none';
-    return;
-  }
-  
-  const urls = extractUrls(content);
-  
-  if(urls.length === 0){
-    container.style.display = 'none';
-    return;
-  }
-  
-  container.style.display = 'block';
-  
-  let html = '';
-  urls.forEach((url, index) => {
-    const displayUrl = url.length > 60 ? url.substring(0, 60) + '...' : url;
-    html += `
+    function updateLinkList() {
+      const content = document.getElementById('d-content').value;
+      const container = document.getElementById('link-list-container');
+      const listEl = document.getElementById('link-list');
+
+      if (!content) {
+        container.style.display = 'none';
+        return;
+      }
+
+      const urls = extractUrls(content);
+
+      if (urls.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+
+      let html = '';
+      urls.forEach((url, index) => {
+        const displayUrl = url.length > 60 ? url.substring(0, 60) + '...' : url;
+        html += `
       <div class="link-item">
         <span class="link-icon">🔗</span>
         <a href="${url}" target="_blank" rel="noopener noreferrer" class="link-url" title="${url}">${displayUrl}</a>
         <button class="link-copy" onclick="copyLink('${url}')">Copy</button>
       </div>
     `;
-  });
-  
-  listEl.innerHTML = html;
-}
+      });
 
-function copyLink(url){
-  navigator.clipboard.writeText(url).then(() => {
-    toast('Đã copy link ✓');
-  }).catch(() => {
-    toast('Copy thất bại');
-  });
-}
-function autoResize(textarea){textarea.style.height='auto';textarea.style.height=textarea.scrollHeight+'px'}
-function clrInp(inpId,btnId){const el=document.getElementById(inpId);el.value='';document.getElementById(btnId).style.display='none';el.focus()}
+      listEl.innerHTML = html;
+    }
 
-// ── VIEWS ─────────────────────────────────────────────────────────────────
-function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active')}
+    function copyLink(url) {
+      navigator.clipboard.writeText(url).then(() => {
+        toast('Đã copy link ✓');
+      }).catch(() => {
+        toast('Copy thất bại');
+      });
+    }
+    function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px' }
+    function clrInp(inpId, btnId) { const el = document.getElementById(inpId); el.value = ''; document.getElementById(btnId).style.display = 'none'; el.focus() }
 
-function goHome(){
-  document.getElementById('srch').value='';
-  document.getElementById('srch-x').style.display='none';
-  document.getElementById('srch-hdr').style.display='none';
-  // sync detail header search too
-  document.getElementById('srch2').value='';
-  document.getElementById('srch-x2').style.display='none';
-  curSearchWords=null;showAll=false;
-  closeDd();closeDd2();
-  showView('main-view');
-  renderList();
-}
+    // ── VIEWS ─────────────────────────────────────────────────────────────────
+    function showView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active') }
 
-function openTrash(){console.log('openTrash called');renderTrash();showView('trash-view')}
+    function goHome() {
+      document.getElementById('srch').value = '';
+      document.getElementById('srch-x').style.display = 'none';
+      document.getElementById('srch-hdr').style.display = 'none';
+      // sync detail header search too
+      document.getElementById('srch2').value = '';
+      document.getElementById('srch-x2').style.display = 'none';
+      curSearchWords = null; showAll = false;
+      closeDd(); closeDd2();
+      showView('main-view');
+      renderList();
+    }
 
-// ── DROPDOWN ──────────────────────────────────────────────────────────────
-function toggleDd(){const d=document.getElementById('dd'),o=document.getElementById('overlay');d.classList.contains('open')?(d.classList.remove('open'),o.classList.remove('on')):(d.classList.add('open'),o.classList.add('on'))}
-function closeDd(){document.getElementById('dd').classList.remove('open');document.getElementById('overlay').classList.remove('on')}
-function toggleDd2(){const d=document.getElementById('dd2');d.classList.contains('open')?d.classList.remove('open'):d.classList.add('open')}
-function closeDd2(){document.getElementById('dd2').classList.remove('open')}
+    function openTrash() { console.log('openTrash called'); renderTrash(); showView('trash-view') }
 
-// ── QUICKNOTE ─────────────────────────────────────────────────────────────
-function clearQuick(){document.getElementById('qn-content').value='';document.getElementById('qn-t').value='';document.getElementById('qx-t').style.display='none';quickImg=null;setQThumb(null);document.getElementById('qn-content').focus()}
-async function saveQuick(){const t=document.getElementById('qn-t').value.trim(),c=document.getElementById('qn-content').value.trim();if(!t&&!c&&!quickImg){toast('Không có nội dung để lưu');return}const n={id:uid(),title:t,content:c,img:quickImg,createdAt:Date.now(),updatedAt:Date.now()};await dbPut('notes',n);notes.unshift(n);clearQuick();renderList();toast('Đã lưu ✓')}
+    // ── DROPDOWN ──────────────────────────────────────────────────────────────
+    function toggleDd() { const d = document.getElementById('dd'), o = document.getElementById('overlay'); d.classList.contains('open') ? (d.classList.remove('open'), o.classList.remove('on')) : (d.classList.add('open'), o.classList.add('on')) }
+    function closeDd() { document.getElementById('dd').classList.remove('open'); document.getElementById('overlay').classList.remove('on') }
+    function toggleDd2() { const d = document.getElementById('dd2'); d.classList.contains('open') ? d.classList.remove('open') : d.classList.add('open') }
+    function closeDd2() { document.getElementById('dd2').classList.remove('open') }
 
-// ── SEARCH ────────────────────────────────────────────────────────────────
-function doSearch(){
-  const q=document.getElementById('srch').value;
-  document.getElementById('srch-x').style.display=q?'block':'none';
-  if(!q){curSearchWords=null;document.getElementById('srch-hdr').style.display='none';renderList();return}
-  const words=nd(q).trim().split(/\s+/).filter(Boolean);
-  curSearchWords=words;
-  const scored=notes.map(n=>({n,s:scoreNote(n,words)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
-  const hdr=document.getElementById('srch-hdr');
-  hdr.style.display='block';hdr.textContent=`Tìm thấy ${scored.length} kết quả`;
-  renderList(words,scored.map(x=>x.n));
-}
-function clearSearch(){document.getElementById('srch').value='';document.getElementById('srch-x').style.display='none';document.getElementById('srch-hdr').style.display='none';curSearchWords=null;document.getElementById('srch').focus();renderList()}
+    // ── QUICKNOTE ─────────────────────────────────────────────────────────────
+    function clearQuick() { document.getElementById('qn-content').value = ''; document.getElementById('qn-t').value = ''; document.getElementById('qx-t').style.display = 'none'; quickImg = null; setQThumb(null); document.getElementById('qn-content').focus() }
+    async function saveQuick() { const t = document.getElementById('qn-t').value.trim(), c = document.getElementById('qn-content').value.trim(); if (!t && !c && !quickImg) { toast('Không có nội dung để lưu'); return } const n = { id: uid(), title: t, content: c, img: quickImg, createdAt: Date.now(), updatedAt: Date.now() }; await dbPut('notes', n); notes.unshift(n); clearQuick(); renderList(); toast('Đã lưu ✓') }
 
-// Sync search from detail view header
-function syncSearch(val){
-  document.getElementById('srch').value=val;
-  document.getElementById('srch-x').style.display=val?'block':'none';
-  document.getElementById('srch-x2').style.display=val?'block':'none';
-  if(!val){curSearchWords=null;hideSearchOverlay();return}
-  const words=nd(val).trim().split(/\s+/).filter(Boolean);
-  curSearchWords=words;
-  const scored=notes.map(n=>({n,s:scoreNote(n,words)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s);
-  if(scored.length>0){
-    showSearchOverlay();
-    renderSearchOverlay(words,scored.map(x=>x.n));
-  }else{
-    showSearchOverlay();
-    renderSearchOverlay(words,[]);
-  }
-}
-function clearSearch2(){document.getElementById('srch2').value='';document.getElementById('srch-x2').style.display='none';syncSearch('')}
+    // ── SEARCH ────────────────────────────────────────────────────────────────
+    function doSearch() {
+      const q = document.getElementById('srch').value;
+      document.getElementById('srch-x').style.display = q ? 'block' : 'none';
+      if (!q) { curSearchWords = null; document.getElementById('srch-hdr').style.display = 'none'; renderList(); return }
+      const words = nd(q).trim().split(/\s+/).filter(Boolean);
+      curSearchWords = words;
+      const scored = notes.map(n => ({ n, s: scoreNote(n, words) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+      const hdr = document.getElementById('srch-hdr');
+      hdr.style.display = 'block'; hdr.textContent = `Tìm thấy ${scored.length} kết quả`;
+      renderList(words, scored.map(x => x.n));
+    }
+    function clearSearch() { document.getElementById('srch').value = ''; document.getElementById('srch-x').style.display = 'none'; document.getElementById('srch-hdr').style.display = 'none'; curSearchWords = null; document.getElementById('srch').focus(); renderList() }
 
-// ── LIST ──────────────────────────────────────────────────────────────────
-function renderList(words,results){
-  const el=document.getElementById('listnote');
-  let list=results?[...results]:[...notes].sort((a,b)=>b.updatedAt-a.updatedAt);
-  if(!results){
-    // Sort: pinned notes first, then by updatedAt
-    list=[...notes].sort((a,b)=>{
-      if(a.pinned&&!b.pinned)return -1;
-      if(!a.pinned&&b.pinned)return 1;
-      return b.updatedAt-a.updatedAt;
-    });
-    if(!showAll)list=list.slice(0,20);
-  }
-  let html='';
-  if(!list.length){html='<div class="empty"><div class="eico">📝</div><div>Chưa có ghi chú nào</div></div>'}
-  else{
-    for(const n of list){
-      const fromSearch=!!results;
-      const title=fromSearch?hlText(n.title||'',words):linkify(esc(n.title||''));
-      const content=fromSearch?hlText(n.content||'',words):linkify(esc(n.content||''));
-      html+=`<div class="ncard${n.pinned?' pinned':''}" onclick="openDetail('${n.id}',${fromSearch})">
-        ${n.img?`<div class="nthumb" style="background-image:url('${n.img}')"></div>`:`<div class="nthumb" style="background:var(--surface)"></div>`}
+    // Sync search from detail view header
+    function syncSearch(val) {
+      document.getElementById('srch').value = val;
+      document.getElementById('srch-x').style.display = val ? 'block' : 'none';
+      document.getElementById('srch-x2').style.display = val ? 'block' : 'none';
+      if (!val) { curSearchWords = null; hideSearchOverlay(); return }
+      const words = nd(val).trim().split(/\s+/).filter(Boolean);
+      curSearchWords = words;
+      const scored = notes.map(n => ({ n, s: scoreNote(n, words) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+      if (scored.length > 0) {
+        showSearchOverlay();
+        renderSearchOverlay(words, scored.map(x => x.n));
+      } else {
+        showSearchOverlay();
+        renderSearchOverlay(words, []);
+      }
+    }
+    function clearSearch2() { document.getElementById('srch2').value = ''; document.getElementById('srch-x2').style.display = 'none'; syncSearch('') }
+
+    // ── LIST ──────────────────────────────────────────────────────────────────
+    function renderList(words, results) {
+      const el = document.getElementById('listnote');
+      let list = results ? [...results] : [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
+      if (!results) {
+        // Sort: pinned notes first, then by updatedAt
+        list = [...notes].sort((a, b) => {
+          if (a.pinned && !b.pinned) return -1;
+          if (!a.pinned && b.pinned) return 1;
+          return b.updatedAt - a.updatedAt;
+        });
+        if (!showAll) list = list.slice(0, 20);
+      }
+      let html = '';
+      if (!list.length) { html = '<div class="empty"><div class="eico">📝</div><div>Chưa có ghi chú nào</div></div>' }
+      else {
+        for (const n of list) {
+          const fromSearch = !!results;
+          const title = fromSearch ? hlText(n.title || '', words) : linkify(esc(n.title || ''));
+          const content = fromSearch ? hlText(n.content || '', words) : linkify(esc(n.content || ''));
+          html += `<div class="ncard${n.pinned ? ' pinned' : ''}" onclick="openDetail('${n.id}',${fromSearch})">
+        ${n.img ? `<div class="nthumb" style="background-image:url('${n.img}')"></div>` : `<div class="nthumb" style="background:var(--surface)"></div>`}
         <div class="nbody">
-          <div class="ntitle">${title||'<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
+          <div class="ntitle">${title || '<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
           <div class="ncontent">${content}</div>
           <div class="ntime">${fmt(n.updatedAt)}</div>
         </div>
         <div class="nactions">
-          <button class="btn-pin ${n.pinned?'pinned':''}" onclick="togglePin('${n.id}',event)" title="${n.pinned?'Bỏ ghim':'Ghim'}">${n.pinned?'📌':'📍'}</button>
+          <button class="btn-copy1" onclick="copyFirstLineFromList('${n.id}',event)" title="Copy dòng đầu">📋</button>
+          <button class="btn-pin ${n.pinned ? 'pinned' : ''}" onclick="togglePin('${n.id}',event)" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}">${n.pinned ? '📌' : '📍'}</button>
           <button class="btn-trash" onclick="deleteFromList('${n.id}',event)" title="Xóa">🗑️</button>
         </div></div>`
+        }
+        if (!results) {
+          if (!showAll && notes.length > 20) { html += `<div class="view-all"><span onclick="loadAll()">Xem tất cả ${notes.length} ghi chú</span></div>` }
+          else if (showAll && notes.length > 20) { html += `<div class="view-all"><span onclick="showLess()">Thu gọn</span></div>` }
+        }
+      }
+      el.innerHTML = html;
     }
-    if(!results){
-      if(!showAll&&notes.length>20){html+=`<div class="view-all"><span onclick="loadAll()">Xem tất cả ${notes.length} ghi chú</span></div>`}
-      else if(showAll&&notes.length>20){html+=`<div class="view-all"><span onclick="showLess()">Thu gọn</span></div>`}
+    function loadAll() { showAll = true; if (curSearchWords) { doSearch() } else renderList() }
+    function showLess() { showAll = false; if (curSearchWords) { doSearch() } else renderList() }
+
+    // ── DETAIL ────────────────────────────────────────────────────────────────
+    let fromSearch = false;
+    function openDetail(id, isSearch) {
+      curNote = notes.find(n => n.id === id); if (!curNote) return;
+      originalNote = { ...curNote }; // Save original state
+      fromSearch = !!isSearch;
+      document.getElementById('d-title').value = curNote.title || '';
+      document.getElementById('d-content').value = curNote.content || '';
+      document.getElementById('dx-t').style.display = curNote.title ? 'block' : 'none';
+      document.getElementById('d-time').textContent = fmt(curNote.updatedAt);
+      // sync search box in detail header
+      const q = document.getElementById('srch').value;
+      document.getElementById('srch2').value = q;
+      document.getElementById('srch-x2').style.display = q ? 'block' : 'none';
+      setThumb(curNote.img);
+      updateLinkList();
+      showView('detail-view');
     }
-  }
-  el.innerHTML=html;
-}
-function loadAll(){showAll=true;if(curSearchWords){doSearch()}else renderList()}
-function showLess(){showAll=false;if(curSearchWords){doSearch()}else renderList()}
+    function setThumb(src) { const img = document.getElementById('dthumb-img'), ph = document.getElementById('dthumb-ph'); if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none' } else { img.style.display = 'none'; ph.style.display = 'flex' } }
+    function onThumbClick() { curNote && curNote.img ? openLb(curNote.img) : triggerImg('detail') }
+    function onQThumbClick() { quickImg ? openLb(quickImg) : triggerImg('main') }
+    function setQThumb(src) { const img = document.getElementById('qthumb-img'), ph = document.getElementById('qthumb-ph'); if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none' } else { img.style.display = 'none'; ph.style.display = 'flex' } }
 
-// ── DETAIL ────────────────────────────────────────────────────────────────
-let fromSearch=false;
-function openDetail(id,isSearch){
-  curNote=notes.find(n=>n.id===id);if(!curNote)return;
-  originalNote={...curNote}; // Save original state
-  fromSearch=!!isSearch;
-  document.getElementById('d-title').value=curNote.title||'';
-  document.getElementById('d-content').value=curNote.content||'';
-  document.getElementById('dx-t').style.display=curNote.title?'block':'none';
-  document.getElementById('d-time').textContent=fmt(curNote.updatedAt);
-  // sync search box in detail header
-  const q=document.getElementById('srch').value;
-  document.getElementById('srch2').value=q;
-  document.getElementById('srch-x2').style.display=q?'block':'none';
-  setThumb(curNote.img);
-  updateLinkList();
-  showView('detail-view');
-}
-function setThumb(src){const img=document.getElementById('dthumb-img'),ph=document.getElementById('dthumb-ph');if(src){img.src=src;img.style.display='block';ph.style.display='none'}else{img.style.display='none';ph.style.display='flex'}}
-function onThumbClick(){curNote&&curNote.img?openLb(curNote.img):triggerImg('detail')}
-function onQThumbClick(){quickImg?openLb(quickImg):triggerImg('main')}
-function setQThumb(src){const img=document.getElementById('qthumb-img'),ph=document.getElementById('qthumb-ph');if(src){img.src=src;img.style.display='block';ph.style.display='none'}else{img.style.display='none';ph.style.display='flex'}}
+    // ── UNSAVED CHANGES ─────────────────────────────────────────────────────────
+    function hasUnsavedChanges() {
+      if (!curNote || !originalNote) return false;
+      const currentTitle = document.getElementById('d-title').value.trim();
+      const currentContent = document.getElementById('d-content').value.trim();
+      return currentTitle !== originalNote.title || currentContent !== originalNote.content || curNote.img !== originalNote.img;
+    }
+    function showUnsavedPopup() { document.getElementById('unsaved-popup').classList.add('active') }
+    function hideUnsavedPopup() { document.getElementById('unsaved-popup').classList.remove('active') }
+    async function saveAndBack() { hideUnsavedPopup(); await saveDetail(); backDetail() }
+    async function saveAndFocusQuick() { hideUnsavedPopup(); await saveDetail(); goHome(); setTimeout(() => document.getElementById('qn-content').focus(), 100) }
+    function discardAndBack() {
+      hideUnsavedPopup();
+      curNote = { ...originalNote };
+      document.getElementById('d-title').value = curNote.title || '';
+      document.getElementById('d-content').value = curNote.content || '';
+      document.getElementById('dx-t').style.display = curNote.title ? 'block' : 'none';
+      setThumb(curNote.img);
+      notes = notes.map(n => n.id === curNote.id ? curNote : n);
+      showView('main-view');
+      if (fromSearch && curSearchWords) {
+        const q = document.getElementById('srch').value;
+        if (q) doSearch();
+      } else {
+        renderList();
+      }
+    }
+    function discardAndFocusQuick() {
+      hideUnsavedPopup();
+      curNote = { ...originalNote };
+      setThumb(curNote.img);
+      notes = notes.map(n => n.id === curNote.id ? curNote : n);
+      goHome();
+      setTimeout(() => document.getElementById('qn-content').focus(), 100);
+    }
+    function cancelBack() { hideUnsavedPopup() }
+    function handleSave() {
+      // Check if called from FAB or Back
+      if (window.fabContext) {
+        saveAndFocusQuick();
+        window.fabContext = false;
+      } else {
+        saveAndBack();
+      }
+    }
+    function handleDiscard() {
+      // Check if called from FAB or Back
+      if (window.fabContext) {
+        discardAndFocusQuick();
+        window.fabContext = false;
+      } else {
+        discardAndBack();
+      }
+    }
 
-// ── UNSAVED CHANGES ─────────────────────────────────────────────────────────
-function hasUnsavedChanges(){
-  if(!curNote||!originalNote)return false;
-  const currentTitle=document.getElementById('d-title').value.trim();
-  const currentContent=document.getElementById('d-content').value.trim();
-  return currentTitle!==originalNote.title||currentContent!==originalNote.content||curNote.img!==originalNote.img;
-}
-function showUnsavedPopup(){document.getElementById('unsaved-popup').classList.add('active')}
-function hideUnsavedPopup(){document.getElementById('unsaved-popup').classList.remove('active')}
-async function saveAndBack(){hideUnsavedPopup();await saveDetail();backDetail()}
-async function saveAndFocusQuick(){hideUnsavedPopup();await saveDetail();goHome();setTimeout(()=>document.getElementById('qn-content').focus(),100)}
-function discardAndBack() {
-  hideUnsavedPopup();
-  curNote = { ...originalNote };
-  document.getElementById('d-title').value   = curNote.title   || '';
-  document.getElementById('d-content').value = curNote.content || '';
-  document.getElementById('dx-t').style.display = curNote.title ? 'block' : 'none';
-  setThumb(curNote.img);
-  notes = notes.map(n => n.id === curNote.id ? curNote : n);
-  showView('main-view');
-  if (fromSearch && curSearchWords) {
-    const q = document.getElementById('srch').value;
-    if (q) doSearch();
-  } else {
-    renderList();
-  }
-}
-function discardAndFocusQuick() {
-  hideUnsavedPopup();
-  curNote = { ...originalNote };
-  setThumb(curNote.img);
-  notes = notes.map(n => n.id === curNote.id ? curNote : n);
-  goHome();
-  setTimeout(() => document.getElementById('qn-content').focus(), 100);
-}
-function cancelBack(){hideUnsavedPopup()}
-function handleSave(){
-  // Check if called from FAB or Back
-  if(window.fabContext){
-    saveAndFocusQuick();
-    window.fabContext=false;
-  }else{
-    saveAndBack();
-  }
-}
-function handleDiscard(){
-  // Check if called from FAB or Back
-  if(window.fabContext){
-    discardAndFocusQuick();
-    window.fabContext=false;
-  }else{
-    discardAndBack();
-  }
-}
-
-// ── SEARCH OVERLAY ───────────────────────────────────────────────────────────
-function showSearchOverlay(){document.getElementById('search-overlay').classList.add('active')}
-function hideSearchOverlay(){document.getElementById('search-overlay').classList.remove('active')}
-function renderSearchOverlay(words,results){
-  const hdr=document.getElementById('search-overlay-header');
-  const res=document.getElementById('search-overlay-results');
-  hdr.textContent=`Tìm thấy ${results.length} kết quả cho "${words.join(' ')}"`;
-  let html='';
-  if(!results.length){html='<div class="search-overlay-empty"><div class="eico">🔍</div><div>Không tìm thấy kết quả nào</div></div>'}
-  else{
-    for(const n of results){
-      const title=hlText(n.title||'',words);
-      const content=hlText(n.content||'',words);
-      html+=`<div class="ncard${n.pinned?' pinned':''}" onclick="openNoteFromOverlay('${n.id}')">
-        ${n.img?`<div class="nthumb" style="background-image:url('${n.img}')"></div>`:`<div class="nthumb" style="background:var(--surface)"></div>`}
+    // ── SEARCH OVERLAY ───────────────────────────────────────────────────────────
+    function showSearchOverlay() { document.getElementById('search-overlay').classList.add('active') }
+    function hideSearchOverlay() { document.getElementById('search-overlay').classList.remove('active') }
+    function renderSearchOverlay(words, results) {
+      const hdr = document.getElementById('search-overlay-header');
+      const res = document.getElementById('search-overlay-results');
+      hdr.textContent = `Tìm thấy ${results.length} kết quả cho "${words.join(' ')}"`;
+      let html = '';
+      if (!results.length) { html = '<div class="search-overlay-empty"><div class="eico">🔍</div><div>Không tìm thấy kết quả nào</div></div>' }
+      else {
+        for (const n of results) {
+          const title = hlText(n.title || '', words);
+          const content = hlText(n.content || '', words);
+          html += `<div class="ncard${n.pinned ? ' pinned' : ''}" onclick="openNoteFromOverlay('${n.id}')">
+        ${n.img ? `<div class="nthumb" style="background-image:url('${n.img}')"></div>` : `<div class="nthumb" style="background:var(--surface)"></div>`}
         <div class="nbody">
-          <div class="ntitle">${title||'<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
+          <div class="ntitle">${title || '<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
           <div class="ncontent">${content}</div>
           <div class="ntime">${fmt(n.updatedAt)}</div>
         </div>
         <div class="nactions">
-          <button class="btn-pin ${n.pinned?'pinned':''}" onclick="event.stopPropagation();togglePin('${n.id}',event)" title="${n.pinned?'Bỏ ghim':'Ghim'}">${n.pinned?'📌':'📍'}</button>
+          <button class="btn-copy1" onclick="event.stopPropagation();copyFirstLineFromList('${n.id}',event)" title="Copy dòng đầu">📋</button>
+          <button class="btn-pin ${n.pinned ? 'pinned' : ''}" onclick="event.stopPropagation();togglePin('${n.id}',event)" title="${n.pinned ? 'Bỏ ghim' : 'Ghim'}">${n.pinned ? '📌' : '📍'}</button>
           <button class="btn-trash" onclick="event.stopPropagation();deleteFromList('${n.id}',event)" title="Xóa">🗑️</button>
         </div></div>`
+        }
+      }
+      res.innerHTML = html;
     }
-  }
-  res.innerHTML=html;
-}
-function openNoteFromOverlay(noteId){
-  hideSearchOverlay();
-  openDetail(noteId,false);
-}
+    function openNoteFromOverlay(noteId) {
+      hideSearchOverlay();
+      openDetail(noteId, false);
+    }
 
-// ── FLOATING ACTION BUTTONS ───────────────────────────────────────────────
-function focusSearch(){
-  // Check current view and focus appropriate search
-  const mainView=document.getElementById('main-view').classList.contains('active');
-  const detailView=document.getElementById('detail-view').classList.contains('active');
-  
-  if(mainView){
-    document.getElementById('srch').focus();
-  }else if(detailView){
-    document.getElementById('srch2').focus();
-  }
-}
-function focusQuickNote(){
-  // Check if in detail view with unsaved changes
-  const detailView=document.getElementById('detail-view').classList.contains('active');
-  if(detailView&&hasUnsavedChanges()){
-    window.fabContext=true; // Set FAB context
-    showUnsavedPopup();
-    return;
-  }
-  
-  // Go to main view and focus quick note content
-  goHome();
-  setTimeout(()=>document.getElementById('qn-content').focus(),100);
-}
+    // ── FLOATING ACTION BUTTONS ───────────────────────────────────────────────
+    function focusSearch() {
+      // Check current view and focus appropriate search
+      const mainView = document.getElementById('main-view').classList.contains('active');
+      const detailView = document.getElementById('detail-view').classList.contains('active');
 
-// ── NOTE ACTIONS ─────────────────────────────────────────────────────────────
-async function togglePin(noteId, event){
-  event.stopPropagation(); // Prevent opening detail
-  const note=notes.find(n=>n.id===noteId);
-  if(!note)return;
-  note.pinned=!note.pinned;
-  note.updatedAt=Date.now();
-  await dbPut('notes',note);
-  renderList();
-  toast(note.pinned?'Đã ghim ✓':'Đã bỏ ghim');
-}
-async function deleteFromList(noteId, event){
-  event.stopPropagation(); // Prevent opening detail
-  if(!confirm('Xóa note này?'))return;
-  const note=notes.find(n=>n.id===noteId);
-  if(!note)return;
-  await dbDel('notes',noteId);
-  const tr={...note,deletedAt:Date.now()};
-  await dbPut('trash',tr);
-  notes=notes.filter(n=>n.id!==noteId);
-  trash.push(tr);
-  renderList();
-  toast('Đã xóa');
-}
-async function saveDetail() {
-  curNote.title   = document.getElementById('d-title').value.trim();
-  curNote.content = document.getElementById('d-content').value.trim();
-  curNote.updatedAt = Date.now();
-  await dbPut('notes', curNote);
-  notes = notes.map(n => n.id === curNote.id ? curNote : n);
-  originalNote = { ...curNote };
-  document.getElementById('d-time').textContent = fmt(curNote.updatedAt);
-  toast('Đã lưu ✓');
-}
-function copyDetail(){const t=document.getElementById('d-title').value,c=document.getElementById('d-content').value;navigator.clipboard.writeText((t?t+'\n':'')+c).then(()=>toast('Đã copy ✓')).catch(()=>toast('Copy thất bại'))}
-function copyFirstLine() {
-  const c = document.getElementById('d-content').value;
-  const firstLine = c.split('\n')[0].trim();
-  if (!firstLine) { toast('Dòng đầu trống'); return; }
-  navigator.clipboard.writeText(firstLine)
-    .then(() => toast('Đã copy dòng đầu ✓'))
-    .catch(() => toast('Copy thất bại'));
-}
-async function deleteNote(){if(!confirm('Xóa note này?'))return;await dbDel('notes',curNote.id);const tr={...curNote,deletedAt:Date.now()};await dbPut('trash',tr);notes=notes.filter(n=>n.id!==curNote.id);trash.push(tr);toast('Đã xóa');goHome()}
-function backDetail(){
-  window.fabContext=false; // Reset FAB context
-  if(hasUnsavedChanges()){
-    showUnsavedPopup();
-    return;
-  }
-  showView('main-view');
-  if(fromSearch&&curSearchWords){
-    // restore search results
-    const q=document.getElementById('srch').value;
-    if(q)doSearch();
-  } else {
-    renderList();
-  }
-}
+      if (mainView) {
+        document.getElementById('srch').focus();
+      } else if (detailView) {
+        document.getElementById('srch2').focus();
+      }
+    }
+    function focusQuickNote() {
+      // Check if in detail view with unsaved changes
+      const detailView = document.getElementById('detail-view').classList.contains('active');
+      if (detailView && hasUnsavedChanges()) {
+        window.fabContext = true; // Set FAB context
+        showUnsavedPopup();
+        return;
+      }
 
-// ── TRASH ─────────────────────────────────────────────────────────────────
-function renderTrash() {
-  const el = document.getElementById('tlist');
-  if (!trash.length) {
-    el.innerHTML = '<div class="empty"><div class="eico">🗑️</div><div>Thùng rác trống</div></div>';
-    return;
-  }
-  const now = Date.now();
-  let html = '';
-  for (const n of [...trash].sort((a, b) => b.deletedAt - a.deletedAt)) {
-    const daysLeft = Math.ceil((TRASH_TTL - (now - n.deletedAt)) / 86400000);
-    const expireBadge = daysLeft <= 3
-      ? `<span style="color:var(--danger);font-size:11px;font-weight:600">⚠️ còn ${daysLeft} ngày</span>` 
-      : `<span style="color:var(--text3);font-size:11px">còn ${daysLeft} ngày</span>`;
-    html += `<div class="tcard">
+      // Go to main view and focus quick note content
+      goHome();
+      setTimeout(() => document.getElementById('qn-content').focus(), 100);
+    }
+
+    // ── NOTE ACTIONS ─────────────────────────────────────────────────────────────
+    async function togglePin(noteId, event) {
+      event.stopPropagation(); // Prevent opening detail
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      note.pinned = !note.pinned;
+      note.updatedAt = Date.now();
+      await dbPut('notes', note);
+      renderList();
+      toast(note.pinned ? 'Đã ghim ✓' : 'Đã bỏ ghim');
+    }
+    async function deleteFromList(noteId, event) {
+      event.stopPropagation(); // Prevent opening detail
+      if (!confirm('Xóa note này?')) return;
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      await dbDel('notes', noteId);
+      const tr = { ...note, deletedAt: Date.now() };
+      await dbPut('trash', tr);
+      notes = notes.filter(n => n.id !== noteId);
+      trash.push(tr);
+      renderList();
+      toast('Đã xóa');
+    }
+    async function saveDetail() {
+      curNote.title = document.getElementById('d-title').value.trim();
+      curNote.content = document.getElementById('d-content').value.trim();
+      curNote.updatedAt = Date.now();
+      await dbPut('notes', curNote);
+      notes = notes.map(n => n.id === curNote.id ? curNote : n);
+      originalNote = { ...curNote };
+      document.getElementById('d-time').textContent = fmt(curNote.updatedAt);
+      toast('Đã lưu ✓');
+    }
+    function copyDetail() { const t = document.getElementById('d-title').value, c = document.getElementById('d-content').value; navigator.clipboard.writeText((t ? t + '\n' : '') + c).then(() => toast('Đã copy ✓')).catch(() => toast('Copy thất bại')) }
+    function copyFirstLine() {
+      const c = document.getElementById('d-content').value;
+      const firstLine = c.split('\n')[0].trim();
+      if (!firstLine) { toast('Dòng đầu trống'); return; }
+      navigator.clipboard.writeText(firstLine)
+        .then(() => toast('Đã copy dòng đầu ✓'))
+        .catch(() => toast('Copy thất bại'));
+    }
+    function copyFirstLineFromList(noteId, event) {
+      event.stopPropagation();
+      const note = notes.find(n => n.id === noteId);
+      if (!note) return;
+      const firstLine = (note.content || '').split('\n')[0].trim();
+      if (!firstLine) { toast('Dòng đầu trống'); return; }
+      navigator.clipboard.writeText(firstLine)
+        .then(() => toast('Đã copy dòng đầu ✓'))
+        .catch(() => toast('Copy thất bại'));
+    }
+    function clearDetailContent() {
+      if (!document.getElementById('d-content').value) return;
+      document.getElementById('d-content').value = '';
+      updateLinkList();
+      document.getElementById('d-content').focus();
+    }
+    async function deleteNote() { if (!confirm('Xóa note này?')) return; await dbDel('notes', curNote.id); const tr = { ...curNote, deletedAt: Date.now() }; await dbPut('trash', tr); notes = notes.filter(n => n.id !== curNote.id); trash.push(tr); toast('Đã xóa'); goHome() }
+    function backDetail() {
+      window.fabContext = false; // Reset FAB context
+      if (hasUnsavedChanges()) {
+        showUnsavedPopup();
+        return;
+      }
+      showView('main-view');
+      if (fromSearch && curSearchWords) {
+        // restore search results
+        const q = document.getElementById('srch').value;
+        if (q) doSearch();
+      } else {
+        renderList();
+      }
+    }
+
+    // ── TRASH ─────────────────────────────────────────────────────────────────
+    function renderTrash() {
+      const el = document.getElementById('tlist');
+      if (!trash.length) {
+        el.innerHTML = '<div class="empty"><div class="eico">🗑️</div><div>Thùng rác trống</div></div>';
+        return;
+      }
+      const now = Date.now();
+      let html = '';
+      for (const n of [...trash].sort((a, b) => b.deletedAt - a.deletedAt)) {
+        const daysLeft = Math.ceil((TRASH_TTL - (now - n.deletedAt)) / 86400000);
+        const expireBadge = daysLeft <= 3
+          ? `<span style="color:var(--danger);font-size:11px;font-weight:600">⚠️ còn ${daysLeft} ngày</span>`
+          : `<span style="color:var(--text3);font-size:11px">còn ${daysLeft} ngày</span>`;
+        html += `<div class="tcard">
       <div class="tcbody">
         <div class="tctitle">${esc(n.title || 'Không tiêu đề')}</div>
         <div class="tccontent">${esc(n.content || '')}</div>
@@ -810,822 +1806,906 @@ function renderTrash() {
         <button class="bdel" onclick="permDel('${n.id}')">Delete</button>
       </div>
     </div>`;
-  }
-  el.innerHTML = html;
-}
-async function restoreNote(id){const n=trash.find(t=>t.id===id);if(!n)return;await dbDel('trash',id);const restored={...n};delete restored.deletedAt;restored.updatedAt=Date.now();await dbPut('notes',restored);notes.unshift(restored);trash=trash.filter(t=>t.id!==id);renderTrash();toast('Đã khôi phục ✓')}
-async function permDel(id){await dbDel('trash',id);trash=trash.filter(t=>t.id!==id);renderTrash();toast('Đã xóa vĩnh viễn')}
-async function delAllTrash(){if(!trash.length){toast('Thùng rác đã trống');return}if(!confirm(`Xóa vĩnh viễn ${trash.length} note?`))return;await dbClear('trash');trash=[];renderTrash();toast('Đã xóa tất cả')}
+      }
+      el.innerHTML = html;
+    }
+    async function restoreNote(id) { const n = trash.find(t => t.id === id); if (!n) return; await dbDel('trash', id); const restored = { ...n }; delete restored.deletedAt; restored.updatedAt = Date.now(); await dbPut('notes', restored); notes.unshift(restored); trash = trash.filter(t => t.id !== id); renderTrash(); toast('Đã khôi phục ✓') }
+    async function permDel(id) { await dbDel('trash', id); trash = trash.filter(t => t.id !== id); renderTrash(); toast('Đã xóa vĩnh viễn') }
+    async function delAllTrash() { if (!trash.length) { toast('Thùng rác đã trống'); return } if (!confirm(`Xóa vĩnh viễn ${trash.length} note?`)) return; await dbClear('trash'); trash = []; renderTrash(); toast('Đã xóa tất cả') }
 
-// ── IMAGE ─────────────────────────────────────────────────────────────────
-function triggerImg(ctx){imgCtx=ctx;document.getElementById('add-img').click()}
-function resizeImg(file,cb){const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{const mw=1000,scale=img.width>mw?mw/img.width:1,w=Math.round(img.width*scale),h=Math.round(img.height*scale),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);c.toBlob(b=>cb(b),'image/jpeg',.7);URL.revokeObjectURL(url)};img.src=url}
-function handleAddImg(e) {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  resizeImg(f, blob => {
-    const r = new FileReader();
-    r.onload = ev => {
-      if (imgCtx === 'main') {
-        quickImg = ev.target.result;
-        setQThumb(quickImg);
-        toast('Đã thêm ảnh ✓');
-      } else if (imgCtx === 'share') {
-        shareImgData = ev.target.result;
-        setSQThumb(shareImgData);
-        toast('Đã thêm ảnh ✓');
-      } else if (imgCtx === 'detail' && curNote) {
-        curNote.img = ev.target.result;
-        setThumb(curNote.img);
+    // ── IMAGE ─────────────────────────────────────────────────────────────────
+    function triggerImg(ctx) { imgCtx = ctx; document.getElementById('add-img').click() }
+    function resizeImg(file, cb) { const img = new Image(), url = URL.createObjectURL(file); img.onload = () => { const mw = 1000, scale = img.width > mw ? mw / img.width : 1, w = Math.round(img.width * scale), h = Math.round(img.height * scale), c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); c.toBlob(b => cb(b), 'image/jpeg', .7); URL.revokeObjectURL(url) }; img.src = url }
+    function handleAddImg(e) {
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      resizeImg(f, blob => {
+        const r = new FileReader();
+        r.onload = ev => {
+          if (imgCtx === 'main') {
+            quickImg = ev.target.result;
+            setQThumb(quickImg);
+            toast('Đã thêm ảnh ✓');
+          } else if (imgCtx === 'share') {
+            shareImgData = ev.target.result;
+            setSQThumb(shareImgData);
+            toast('Đã thêm ảnh ✓');
+          } else if (imgCtx === 'detail' && curNote) {
+            curNote.img = ev.target.result;
+            setThumb(curNote.img);
+            notes = notes.map(n => n.id === curNote.id ? curNote : n);
+            toast('Đã chọn ảnh — nhấn Save để lưu');
+          }
+        };
+        r.readAsDataURL(blob);
+      });
+    }
+    document.getElementById('rep-img').addEventListener('change', function (e) {
+      const f = e.target.files[0]; e.target.value = ''; if (!f || !curNote) return;
+      resizeImg(f, blob => {
+        const r = new FileReader();
+        r.onload = ev => {
+          curNote.img = ev.target.result;
+          setThumb(curNote.img);
+          notes = notes.map(n => n.id === curNote.id ? curNote : n);
+          toast('Đã chọn ảnh thay thế — nhấn Save để lưu');
+        };
+        r.readAsDataURL(blob);
+      });
+    });
+
+    // ── LIGHTBOX ──────────────────────────────────────────────────────────────
+    let lbScale = 1, lbX = 0, lbY = 0, lbActive = false;
+    let ptStart = {}, ptDist = 0, panSX = 0, panSY = 0;
+
+    function openLb(src) {
+      lbScale = 1; lbX = 0; lbY = 0;
+      const img = document.getElementById('lb-img');
+      img.src = src;
+      applyLbTransform();
+      document.getElementById('lb').classList.add('open');
+      lbActive = true;
+      setupLbTouch();
+    }
+    function closeLb() { document.getElementById('lb').classList.remove('open'); lbActive = false }
+    function applyLbTransform() { document.getElementById('lb-img').style.transform = `translate(${lbX}px,${lbY}px) scale(${lbScale})` }
+
+    function setupLbTouch() {
+      const wrap = document.getElementById('lb-wrap');
+      wrap.ontouchstart = e => {
+        if (e.touches.length === 1) {
+          ptStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+          panSX = lbX; panSY = lbY;
+        } else if (e.touches.length === 2) {
+          ptDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        }
+        e.preventDefault();
+      };
+      wrap.ontouchmove = e => {
+        if (e.touches.length === 1 && lbScale > 1) {
+          lbX = panSX + (e.touches[0].clientX - ptStart.x);
+          lbY = panSY + (e.touches[0].clientY - ptStart.y);
+          applyLbTransform();
+        } else if (e.touches.length === 2) {
+          const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+          lbScale = Math.min(4, Math.max(1, lbScale * (d / ptDist)));
+          ptDist = d;
+          if (lbScale === 1) { lbX = 0; lbY = 0 }
+          applyLbTransform();
+        }
+        e.preventDefault();
+      };
+      wrap.ontouchend = e => {
+        if (e.changedTouches.length === 1 && e.touches.length === 0) {
+          const dx = Math.abs(e.changedTouches[0].clientX - ptStart.x), dy = Math.abs(e.changedTouches[0].clientY - ptStart.y), dt = Date.now() - ptStart.t;
+          if (dx < 8 && dy < 8 && dt < 300) {// tap
+            if (lbScale > 1) { lbScale = 1; lbX = 0; lbY = 0 } else { lbScale = 2.5 }
+            applyLbTransform();
+          }
+        }
+      };
+      // click fallback for desktop
+      wrap.onclick = null;
+    }
+
+    async function lbCopy() {
+      const img = document.getElementById('lb-img');
+      try {
+        const res = await fetch(img.src);
+        const blob = await res.blob();
+        // Convert to PNG for clipboard compatibility
+        const bmp = await createImageBitmap(blob);
+        const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+        c.getContext('2d').drawImage(bmp, 0, 0);
+        c.toBlob(async pngBlob => {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+            toast('Đã copy ảnh vào clipboard ✓');
+          } catch { toast('Trình duyệt chưa hỗ trợ copy ảnh') }
+        }, 'image/png');
+      } catch { toast('Không thể copy ảnh') }
+    }
+    function lbDownload() { const a = document.createElement('a'); a.href = document.getElementById('lb-img').src; a.download = 'lufast-' + Date.now() + '.jpg'; a.click(); toast('Đang tải ảnh...') }
+    function lbReplace() { closeLb(); document.getElementById('rep-img').click() }
+    function lbDelete() {
+      if (curNote) {
+        if (!confirm('Xóa ảnh này?')) return;
+        curNote.img = null;
+        setThumb(null);
         notes = notes.map(n => n.id === curNote.id ? curNote : n);
-        toast('Đã chọn ảnh — nhấn Save để lưu');
-      }
-    };
-    r.readAsDataURL(blob);
-  });
-}
-document.getElementById('rep-img').addEventListener('change', function(e) {
-  const f = e.target.files[0]; e.target.value = ''; if (!f || !curNote) return;
-  resizeImg(f, blob => {
-    const r = new FileReader();
-    r.onload = ev => {
-      curNote.img = ev.target.result;
-      setThumb(curNote.img);
-      notes = notes.map(n => n.id === curNote.id ? curNote : n);
-      toast('Đã chọn ảnh thay thế — nhấn Save để lưu');
-    };
-    r.readAsDataURL(blob);
-  });
-});
-
-// ── LIGHTBOX ──────────────────────────────────────────────────────────────
-let lbScale=1,lbX=0,lbY=0,lbActive=false;
-let ptStart={},ptDist=0,panSX=0,panSY=0;
-
-function openLb(src){
-  lbScale=1;lbX=0;lbY=0;
-  const img=document.getElementById('lb-img');
-  img.src=src;
-  applyLbTransform();
-  document.getElementById('lb').classList.add('open');
-  lbActive=true;
-  setupLbTouch();
-}
-function closeLb(){document.getElementById('lb').classList.remove('open');lbActive=false}
-function applyLbTransform(){document.getElementById('lb-img').style.transform=`translate(${lbX}px,${lbY}px) scale(${lbScale})`}
-
-function setupLbTouch(){
-  const wrap=document.getElementById('lb-wrap');
-  wrap.ontouchstart=e=>{
-    if(e.touches.length===1){
-      ptStart={x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()};
-      panSX=lbX;panSY=lbY;
-    } else if(e.touches.length===2){
-      ptDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    }
-    e.preventDefault();
-  };
-  wrap.ontouchmove=e=>{
-    if(e.touches.length===1&&lbScale>1){
-      lbX=panSX+(e.touches[0].clientX-ptStart.x);
-      lbY=panSY+(e.touches[0].clientY-ptStart.y);
-      applyLbTransform();
-    } else if(e.touches.length===2){
-      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      lbScale=Math.min(4,Math.max(1,lbScale*(d/ptDist)));
-      ptDist=d;
-      if(lbScale===1){lbX=0;lbY=0}
-      applyLbTransform();
-    }
-    e.preventDefault();
-  };
-  wrap.ontouchend=e=>{
-    if(e.changedTouches.length===1&&e.touches.length===0){
-      const dx=Math.abs(e.changedTouches[0].clientX-ptStart.x),dy=Math.abs(e.changedTouches[0].clientY-ptStart.y),dt=Date.now()-ptStart.t;
-      if(dx<8&&dy<8&&dt<300){// tap
-        if(lbScale>1){lbScale=1;lbX=0;lbY=0}else{lbScale=2.5}
-        applyLbTransform();
+        closeLb();
+        toast('Đã xóa ảnh — nhấn Save để lưu');
+      } else {
+        if (!confirm('Xóa ảnh này?')) return;
+        quickImg = null;
+        setQThumb(null);
+        closeLb();
+        toast('Đã xóa ảnh');
       }
     }
-  };
-  // click fallback for desktop
-  wrap.onclick=null;
-}
 
-async function lbCopy(){
-  const img=document.getElementById('lb-img');
-  try{
-    const res=await fetch(img.src);
-    const blob=await res.blob();
-    // Convert to PNG for clipboard compatibility
-    const bmp=await createImageBitmap(blob);
-    const c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;
-    c.getContext('2d').drawImage(bmp,0,0);
-    c.toBlob(async pngBlob=>{
-      try{
-        await navigator.clipboard.write([new ClipboardItem({'image/png':pngBlob})]);
-        toast('Đã copy ảnh vào clipboard ✓');
-      }catch{toast('Trình duyệt chưa hỗ trợ copy ảnh')}
-    },'image/png');
-  }catch{toast('Không thể copy ảnh')}
-}
-function lbDownload(){const a=document.createElement('a');a.href=document.getElementById('lb-img').src;a.download='lufast-'+Date.now()+'.jpg';a.click();toast('Đang tải ảnh...')}
-function lbReplace(){closeLb();document.getElementById('rep-img').click()}
-function lbDelete() {
-  if (curNote) {
-    if (!confirm('Xóa ảnh này?')) return;
-    curNote.img = null;
-    setThumb(null);
-    notes = notes.map(n => n.id === curNote.id ? curNote : n);
-    closeLb();
-    toast('Đã xóa ảnh — nhấn Save để lưu');
-  } else {
-    if (!confirm('Xóa ảnh này?')) return;
-    quickImg = null;
-    setQThumb(null);
-    closeLb();
-    toast('Đã xóa ảnh');
-  }
-}
+    // ── EXPORT / IMPORT ───────────────────────────────────────────────────────
+    const EK = 'LuFast2025!';
+    function xEnc(s) { let r = ''; for (let i = 0; i < s.length; i++)r += String.fromCharCode(s.charCodeAt(i) ^ EK.charCodeAt(i % EK.length)); return btoa(unescape(encodeURIComponent(r))) }
+    function xDec(s) { const d = decodeURIComponent(escape(atob(s))); let r = ''; for (let i = 0; i < d.length; i++)r += String.fromCharCode(d.charCodeAt(i) ^ EK.charCodeAt(i % EK.length)); return r }
 
-// ── EXPORT / IMPORT ───────────────────────────────────────────────────────
-const EK='LuFast2025!';
-function xEnc(s){let r='';for(let i=0;i<s.length;i++)r+=String.fromCharCode(s.charCodeAt(i)^EK.charCodeAt(i%EK.length));return btoa(unescape(encodeURIComponent(r)))}
-function xDec(s){const d=decodeURIComponent(escape(atob(s)));let r='';for(let i=0;i<d.length;i++)r+=String.fromCharCode(d.charCodeAt(i)^EK.charCodeAt(i%EK.length));return r}
+    async function exportNotes() {
+      console.log('exportNotes called');
+      closeDd(); closeDd2();
+      const all = await dbAll('notes');
+      const encoded = xEnc(JSON.stringify({ v: 1, notes: all, exportedAt: Date.now() }));
+      const blob = new Blob([encoded], { type: 'application/octet-stream' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lufast-' + new Date().toISOString().slice(0, 10) + '.lufast'; a.click();
+      toast(`Đã export ${all.length} note`);
+    }
+    async function importNotes(e) {
+      const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async ev => {
+        try {
+          const data = JSON.parse(xDec(ev.target.result));
+          if (!data.notes) throw 0;
+          let added = 0, updated = 0;
+          for (const n of data.notes) {
+            const ex = notes.find(x => x.id === n.id);
+            if (!ex) { await dbPut('notes', n); notes.push(n); added++ }
+            else if (n.updatedAt > ex.updatedAt) { await dbPut('notes', n); notes = notes.map(x => x.id === n.id ? n : x); updated++ }
+          }
+          notes.sort((a, b) => b.updatedAt - a.updatedAt);
+          renderList(); toast(`Import: +${added} mới, ${updated} cập nhật`);
+        } catch { toast('File không hợp lệ') }
+      };
+      reader.readAsText(file);
+    }
 
-async function exportNotes(){
-  console.log('exportNotes called');
-  closeDd();closeDd2();
-  const all=await dbAll('notes');
-  const encoded=xEnc(JSON.stringify({v:1,notes:all,exportedAt:Date.now()}));
-  const blob=new Blob([encoded],{type:'application/octet-stream'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='lufast-'+new Date().toISOString().slice(0,10)+'.lufast';a.click();
-  toast(`Đã export ${all.length} note`);
-}
-async function importNotes(e){
-  const file=e.target.files[0];e.target.value='';if(!file)return;
-  const reader=new FileReader();
-  reader.onload=async ev=>{
-    try{
-      const data=JSON.parse(xDec(ev.target.result));
-      if(!data.notes)throw 0;
-      let added=0,updated=0;
-      for(const n of data.notes){
-        const ex=notes.find(x=>x.id===n.id);
-        if(!ex){await dbPut('notes',n);notes.push(n);added++}
-        else if(n.updatedAt>ex.updatedAt){await dbPut('notes',n);notes=notes.map(x=>x.id===n.id?n:x);updated++}
+    // ── SHARE ─────────────────────────────────────────────────────────────────
+    let shareImgData = null;
+    let shareReferrer = '';   // ← lưu referrer của mạng xã hội
+
+    function fmtShareTitle() {
+      const d = new Date();
+      const yy = String(d.getFullYear()).slice(2);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mi = String(d.getMinutes()).padStart(2, '0');
+      return `LuFast ${yy}${mm}${dd} ${hh}:${mi}`;
+    }
+
+    function setSQThumb(src) {
+      const img = document.getElementById('sq-thumb-img');
+      const ph = document.getElementById('sq-thumb-ph');
+      if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none'; }
+      else { img.style.display = 'none'; ph.style.display = 'flex'; }
+    }
+    function onSQThumbClick() {
+      if (shareImgData) openLb(shareImgData);
+      else { imgCtx = 'share'; document.getElementById('add-img').click(); }
+    }
+
+    // Khi click/focus vào ô content → đặt cursor ở đầu dòng 2
+    function focusShareLine2(e) {
+      const ta = document.getElementById('sh-c');
+      const val = ta.value;
+      const newlineIdx = val.indexOf('\n');
+      // Chỉ nhảy nếu có dòng 2 (tức đã có link ở dòng 1)
+      if (newlineIdx !== -1) {
+        const pos = newlineIdx + 1;
+        // Dùng setTimeout để tránh bị ghi đè bởi sự kiện focus mặc định
+        setTimeout(() => { ta.setSelectionRange(pos, pos); }, 0);
       }
-      notes.sort((a,b)=>b.updatedAt-a.updatedAt);
-      renderList();toast(`Import: +${added} mới, ${updated} cập nhật`);
-    }catch{toast('File không hợp lệ')}
-  };
-  reader.readAsText(file);
-}
-
-// ── SHARE ─────────────────────────────────────────────────────────────────
-let shareImgData = null;
-let shareReferrer = '';   // ← lưu referrer của mạng xã hội
-
-function fmtShareTitle() {
-  const d = new Date();
-  const yy = String(d.getFullYear()).slice(2);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  return `LuFast ${yy}${mm}${dd} ${hh}:${mi}`;
-}
-
-function setSQThumb(src) {
-  const img = document.getElementById('sq-thumb-img');
-  const ph  = document.getElementById('sq-thumb-ph');
-  if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none'; }
-  else      { img.style.display = 'none'; ph.style.display = 'flex'; }
-}
-function onSQThumbClick() {
-  if (shareImgData) openLb(shareImgData);
-  else { imgCtx = 'share'; document.getElementById('add-img').click(); }
-}
-
-// Khi click/focus vào ô content → đặt cursor ở đầu dòng 2
-function focusShareLine2(e) {
-  const ta = document.getElementById('sh-c');
-  const val = ta.value;
-  const newlineIdx = val.indexOf('\n');
-  // Chỉ nhảy nếu có dòng 2 (tức đã có link ở dòng 1)
-  if (newlineIdx !== -1) {
-    const pos = newlineIdx + 1;
-    // Dùng setTimeout để tránh bị ghi đè bởi sự kiện focus mặc định
-    setTimeout(() => { ta.setSelectionRange(pos, pos); }, 0);
-  }
-}
-
-function clearShare() {
-  document.getElementById('sh-t').value = '';
-  document.getElementById('sh-c').value = '';
-  document.getElementById('shx-t').style.display = 'none';
-  shareImgData = null;
-  setSQThumb(null);
-}
-
-async function saveShare() {
-  const t = document.getElementById('sh-t').value.trim();
-  const c = document.getElementById('sh-c').value.trim();
-  if (!t && !c && !shareImgData) { toast('Không có nội dung'); return; }
-
-  const n = {
-    id: uid(),
-    title: t,
-    content: c,
-    img: shareImgData || null,
-    pinned: false,
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  };
-  await dbPut('notes', n);
-  notes.unshift(n);
-  toast('Đã lưu ✓');
-
-  setTimeout(() => {
-    const ref = sessionStorage.getItem('lufast_share_ref') || '';
-    sessionStorage.removeItem('lufast_share_ref');
-
-    if (ref && !ref.includes(location.hostname)) {
-      // Quay về Facebook/TikTok bằng referrer gốc
-      window.location.href = ref;
-    } else {
-      // Fallback: ẩn share view về main
-      document.getElementById('share-view').classList.remove('active');
-      showView('main-view');
-      renderList();
-      toast('Đã lưu ✓ — Bấm Back để về mạng xã hội');
     }
-  }, 600);
-}
 
-function handleShared(title, text, url, referrer) {
-  shareReferrer = referrer || '';   // ← lưu lại để saveShare() dùng
-
-  const sv = document.getElementById('share-view');
-  sv.classList.add('active');
-
-  document.getElementById('sh-t').value = fmtShareTitle();
-  chkX('sh-t', 'shx-t');
-
-  const link = url || text || '';
-  document.getElementById('sh-c').value = link ? (link + '\n') : '';
-
-  shareImgData = null;
-  setSQThumb(null);
-
-  setTimeout(() => {
-    const ta = document.getElementById('sh-c');
-    ta.focus();
-    if (link) {
-      const pos = link.length + 1;
-      ta.setSelectionRange(pos, pos);
+    function clearShare() {
+      document.getElementById('sh-t').value = '';
+      document.getElementById('sh-c').value = '';
+      document.getElementById('shx-t').style.display = 'none';
+      shareImgData = null;
+      setSQThumb(null);
     }
-  }, 200);
-}
 
+    async function saveShare() {
+      const t = document.getElementById('sh-t').value.trim();
+      const c = document.getElementById('sh-c').value.trim();
+      if (!t && !c && !shareImgData) { toast('Không có nội dung'); return; }
 
+      const n = {
+        id: uid(),
+        title: t,
+        content: c,
+        img: shareImgData || null,
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      await dbPut('notes', n);
+      notes.unshift(n);
+      toast('Đã lưu ✓');
 
-// ── ANDROID BACK BUTTON (hardware/gesture) ────────────────────────────────
-// Đẩy 1 state vào history khi app load để có thể bắt sự kiện popstate
-history.pushState({ lufast: true }, '');
+      setTimeout(() => {
+        const ref = sessionStorage.getItem('lufast_share_ref') || '';
+        sessionStorage.removeItem('lufast_share_ref');
 
-window.addEventListener('popstate', function(e) {
-  // Luôn đẩy lại state để không bao giờ thoát app bằng back
-  history.pushState({ lufast: true }, '');
-
-  // Lightbox đang mở → đóng lightbox
-  if (document.getElementById('lb').classList.contains('open')) {
-    closeLb(); return;
-  }
-
-  // Unsaved popup đang mở → đóng popup (= hủy)
-  if (document.getElementById('unsaved-popup').classList.contains('active')) {
-    cancelBack(); return;
-  }
-
-  // Search overlay đang mở → đóng overlay
-  if (document.getElementById('search-overlay').classList.contains('active')) {
-    hideSearchOverlay(); return;
-  }
-
-  // Share view đang hiện → không làm gì (để user tự Save/Clear)
-  if (document.getElementById('share-view').classList.contains('active')) {
-    return;
-  }
-
-  // Detail view → hành xử y chang nút Back trong footer
-  if (document.getElementById('detail-view').classList.contains('active')) {
-    backDetail(); return;
-  }
-
-  // Trash view → về home
-  if (document.getElementById('trash-view').classList.contains('active')) {
-    goHome(); return;
-  }
-
-  // Main view đang search → xóa search
-  if (document.getElementById('main-view').classList.contains('active')) {
-    const srch = document.getElementById('srch');
-    if (srch.value) { clearSearch(); return; }
-    // Nếu không có gì để back → không làm gì (giữ app mở)
-  }
-});
-
-// ── CHECK SHARE PARAMS ─────────────────────────────────────────────────────
-function checkShareParams() {
-  const p = new URLSearchParams(location.search);
-  if (!p.has('text') && !p.has('url')) return;
-
-  // Lưu referrer TRƯỚC KHI xóa params
-  // Lúc này document.referrer vẫn còn là URL Facebook/TikTok
-  const ref = document.referrer || '';
-
-  // Xóa params khỏi URL để Windows PWA không đọc lại lần sau
-  history.replaceState({}, '', '/');
-
-  // Lưu referrer vào sessionStorage để saveShare() dùng
-  // sessionStorage tồn tại trong suốt session share này
-  if (ref) sessionStorage.setItem('lufast_share_ref', ref);
-
-  handleShared(
-    p.get('title') || '',
-    p.get('text')  || '',
-    p.get('url')   || ''
-  );
-}
-
-// Gọi checkShareParams() ngay khi script chạy (không cần chờ init)
-checkShareParams();
-
-// ── FOOTER TRÁNH BÀN PHÍM ────────────────────────────────────────────────
-(function() {
-  if (!window.visualViewport) return;
-
-  function adjustFooter() {
-    const vv = window.visualViewport;
-    const windowHeight = window.innerHeight;
-    const viewportHeight = vv.height + vv.offsetTop;
-    const keyboardHeight = Math.max(0, windowHeight - viewportHeight);
-
-    document.querySelectorAll('.footer, .trashfooter').forEach(el => {
-      el.style.transform = keyboardHeight > 50
-        ? `translateY(-${keyboardHeight}px)` 
-        : '';
-    });
-  }
-
-  window.visualViewport.addEventListener('resize', adjustFooter);
-  window.visualViewport.addEventListener('scroll', adjustFooter);
-})();
-
-// ── KEYBOARD SHORTCUT ─────────────────────────────────────────────────────
-document.addEventListener('keydown', function(e) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault();
-    if (document.getElementById('detail-view').classList.contains('active')) {
-      saveDetail();
-    }
-  }
-});
-
-// ── INIT ──────────────────────────────────────────────────────────────────
-async function init(){
-  await openDB();
-  [notes,trash]=await Promise.all([dbAll('notes'),dbAll('trash')]);
-  notes.sort((a,b)=>b.updatedAt-a.updatedAt);
-  trash.sort((a,b)=>b.deletedAt-a.deletedAt);
-  await purgeExpiredTrash();
-
-  // Expose ra window để Firebase module truy cập
-  Object.defineProperty(window,'notes',{get:()=>notes,set:v=>{notes=v},configurable:true});
-  Object.defineProperty(window,'trash',{get:()=>trash,set:v=>{trash=v},configurable:true});
-  Object.defineProperty(window,'curNote',{get:()=>curNote,set:v=>{curNote=v},configurable:true});
-  Object.defineProperty(window,'dbPut',{get:()=>dbPut,configurable:true});
-  Object.defineProperty(window,'dbDel',{get:()=>dbDel,configurable:true});
-  Object.defineProperty(window,'renderList',{get:()=>renderList,configurable:true});
-  Object.defineProperty(window,'toast',{get:()=>toast,configurable:true});
-
-  renderList();
-  await checkShareInbox();
-}
-init();
-
-</script>
-<script type="module">
-import { initializeApp }
-  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
-import { getFirestore, collection, doc, setDoc, deleteDoc,
-         getDocs, writeBatch, onSnapshot, serverTimestamp }
-  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
-
-// ── CONFIG ───────────────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey:            'AIzaSyBKyq1leWeWu3PEwPrnbJE1IwN7O262i0g',
-  authDomain:        'lufast-e4e1a.firebaseapp.com',
-  projectId:         'lufast-e4e1a',
-  storageBucket:     'lufast-e4e1a.firebasestorage.app',
-  messagingSenderId: '982801803049',
-  appId:             '1:982801803049:web:1eeb7a1ccf6d669614f938'
-};
-const fbApp = initializeApp(firebaseConfig);
-const auth  = getAuth(fbApp);
-const fbDb  = getFirestore(fbApp);
-
-// ── STATE ─────────────────────────────────────────────────────────────────
-let fbUser = null;
-let unsubNotes = null;   // listener realtime notes
-let unsubTrash = null;   // listener realtime trash
-let unsubDeleted = null; // listener realtime deletedNotes
-let isSyncing = false;
-
-// ── COLLECTIONS ───────────────────────────────────────────────────────────
-const col  = (name) => collection(fbDb, 'users', fbUser.uid, name);
-const ref  = (name, id) => doc(fbDb, 'users', fbUser.uid, name, id);
-
-// ── SYNC INDICATOR ────────────────────────────────────────────────────────
-function setSyncStatus(s) {
-  ['sync-indicator','sync-indicator2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.className = s ? s : '';
-  });
-}
-
-// ── UI ────────────────────────────────────────────────────────────────────
-function updateAuthUI(user) {
-  const on   = !!user;
-  const name = user ? (user.displayName || user.email) : '';
-  ['dd-user','dd-user2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = on ? `👤 ${name}` : '';
-    el.classList.toggle('show', on);
-  });
-  ['dd-login-lbl','dd-login-lbl2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = on ? 'Đăng xuất' : 'Đăng nhập';
-  });
-  ['dd-sync-btn','dd-sync-btn2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = on ? '' : 'none';
-  });
-  setSyncStatus(on ? 'ok' : '');
-}
-
-// ── AUTH ──────────────────────────────────────────────────────────────────
-window.toggleLogin = async function() {
-  if (fbUser) {
-    if (!confirm('Đăng xuất khỏi sync?')) return;
-    stopListeners();
-    await signOut(auth);
-    window.toast('Đã đăng xuất');
-  } else {
-    try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch(e) {
-      window.toast('Đăng nhập thất bại');
-      console.error(e);
-    }
-  }
-};
-
-onAuthStateChanged(auth, async user => {
-  fbUser = user;
-  updateAuthUI(user);
-  if (user) {
-    await initialSync();   // sync đầy đủ 1 lần khi login
-    startListeners();      // sau đó lắng nghe realtime
-  } else {
-    stopListeners();
-  }
-});
-
-// ── REALTIME LISTENERS ────────────────────────────────────────────────────
-function startListeners() {
-  if (!fbUser) return;
-
-  // Lắng nghe notes thay đổi trên cloud → cập nhật local
-  unsubNotes = onSnapshot(col('notes'), snap => {
-    snap.docChanges().forEach(async change => {
-      const n = change.doc.data();
-      if (change.type === 'added' || change.type === 'modified') {
-        const local = window.notes.find(x => x.id === n.id);
-        if (!local || n.updatedAt > local.updatedAt) {
-          await window.dbPut('notes', n);
-          if (!local) window.notes.push(n);
-          else window.notes = window.notes.map(x => x.id === n.id ? n : x);
-          window.notes.sort((a,b) => b.updatedAt - a.updatedAt);
-          window.renderList();
+        if (ref && !ref.includes(location.hostname)) {
+          // Quay về Facebook/TikTok bằng referrer gốc
+          window.location.href = ref;
+        } else {
+          // Fallback: ẩn share view về main
+          document.getElementById('share-view').classList.remove('active');
+          showView('main-view');
+          renderList();
+          toast('Đã lưu ✓ — Bấm Back để về mạng xã hội');
         }
-      }
-    });
-  });
+      }, 600);
+    }
 
-  // Lắng nghe trash
-  unsubTrash = onSnapshot(col('trash'), snap => {
-    snap.docChanges().forEach(async change => {
-      const n = change.doc.data();
-      if (change.type === 'added' || change.type === 'modified') {
-        const local = window.trash.find(x => x.id === n.id);
-        if (!local || n.deletedAt > (local.deletedAt || 0)) {
-          await window.dbPut('trash', n);
-          if (!local) window.trash.push(n);
-          else window.trash = window.trash.map(x => x.id === n.id ? n : x);
+    function handleShared(title, text, url, referrer) {
+      shareReferrer = referrer || '';   // ← lưu lại để saveShare() dùng
+
+      const sv = document.getElementById('share-view');
+      sv.classList.add('active');
+
+      document.getElementById('sh-t').value = fmtShareTitle();
+      chkX('sh-t', 'shx-t');
+
+      const link = url || text || '';
+      document.getElementById('sh-c').value = link ? (link + '\n') : '';
+
+      shareImgData = null;
+      setSQThumb(null);
+
+      setTimeout(() => {
+        const ta = document.getElementById('sh-c');
+        ta.focus();
+        if (link) {
+          const pos = link.length + 1;
+          ta.setSelectionRange(pos, pos);
         }
+      }, 200);
+    }
+
+
+
+    // ── ANDROID BACK BUTTON (hardware/gesture) ────────────────────────────────
+    // Đẩy 1 state vào history khi app load để có thể bắt sự kiện popstate
+    history.pushState({ lufast: true }, '');
+
+    window.addEventListener('popstate', function (e) {
+      // Luôn đẩy lại state để không bao giờ thoát app bằng back
+      history.pushState({ lufast: true }, '');
+
+      // Lightbox đang mở → đóng lightbox
+      if (document.getElementById('lb').classList.contains('open')) {
+        closeLb(); return;
+      }
+
+      // Unsaved popup đang mở → đóng popup (= hủy)
+      if (document.getElementById('unsaved-popup').classList.contains('active')) {
+        cancelBack(); return;
+      }
+
+      // Search overlay đang mở → đóng overlay
+      if (document.getElementById('search-overlay').classList.contains('active')) {
+        hideSearchOverlay(); return;
+      }
+
+      // Share view đang hiện → không làm gì (để user tự Save/Clear)
+      if (document.getElementById('share-view').classList.contains('active')) {
+        return;
+      }
+
+      // Detail view → hành xử y chang nút Back trong footer
+      if (document.getElementById('detail-view').classList.contains('active')) {
+        backDetail(); return;
+      }
+
+      // Trash view → về home
+      if (document.getElementById('trash-view').classList.contains('active')) {
+        goHome(); return;
+      }
+
+      // Main view đang search → xóa search
+      if (document.getElementById('main-view').classList.contains('active')) {
+        const srch = document.getElementById('srch');
+        if (srch.value) { clearSearch(); return; }
+        // Nếu không có gì để back → không làm gì (giữ app mở)
       }
     });
-  });
 
-  // Lắng nghe deletedNotes → xóa note khỏi local nếu bị xóa từ thiết bị khác
-  unsubDeleted = onSnapshot(col('deletedNotes'), snap => {
-    snap.docChanges().forEach(async change => {
-      if (change.type === 'added') {
-        const data = change.doc.data();
-        const { id, deletedAt } = data;
+    // ── CHECK SHARE PARAMS ─────────────────────────────────────────────────────
+    function checkShareParams() {
+      const p = new URLSearchParams(location.search);
+      if (!p.has('text') && !p.has('url')) return;
 
-        // Bỏ qua nếu document cũ hơn 5 phút
-        // (tránh xóa note local khi mới login và sync lần đầu)
-        const age = Date.now() - (deletedAt || 0);
-        if (age > 5 * 60 * 1000) return;
+      // Lưu referrer TRƯỚC KHI xóa params
+      // Lúc này document.referrer vẫn còn là URL Facebook/TikTok
+      const ref = document.referrer || '';
 
-        // Xóa khỏi notes local nếu còn
-        const inNotes = window.notes.find(x => x.id === id);
-        if (inNotes) {
-          await window.dbDel('notes', id);
-          window.notes = window.notes.filter(x => x.id !== id);
-          window.renderList();
-          window.toast('Một note vừa bị xóa từ thiết bị khác');
-        }
-      }
-    });
-  });
-}
+      // Xóa params khỏi URL để Windows PWA không đọc lại lần sau
+      history.replaceState({}, '', '/');
 
-function stopListeners() {
-  if (unsubNotes)   { unsubNotes();   unsubNotes = null; }
-  if (unsubTrash)   { unsubTrash();   unsubTrash = null; }
-  if (unsubDeleted) { unsubDeleted(); unsubDeleted = null; }
-}
+      // Lưu referrer vào sessionStorage để saveShare() dùng
+      // sessionStorage tồn tại trong suốt session share này
+      if (ref) sessionStorage.setItem('lufast_share_ref', ref);
 
-// ── INITIAL SYNC (đầy đủ, 1 lần khi login/mở app) ────────────────────────
-async function initialSync() {
-  if (!fbUser || isSyncing) return;
-  isSyncing = true;
-  setSyncStatus('syncing');
-  try {
-    const [cloudNotesSnap, cloudTrashSnap, cloudDeletedSnap] = await Promise.all([
-      getDocs(col('notes')),
-      getDocs(col('trash')),
-      getDocs(col('deletedNotes'))
-    ]);
-
-    const cloudNotes   = cloudNotesSnap.docs.map(d => d.data());
-    const cloudTrash   = cloudTrashSnap.docs.map(d => d.data());
-    const deletedIds   = new Set(cloudDeletedSnap.docs.map(d => d.data().id));
-
-    // Xóa những note local đã bị xóa từ thiết bị khác
-    for (const id of deletedIds) {
-      const inNotes = window.notes.find(x => x.id === id);
-      if (inNotes) {
-        await window.dbDel('notes', id);
-        window.notes = window.notes.filter(x => x.id !== id);
-      }
+      handleShared(
+        p.get('title') || '',
+        p.get('text') || '',
+        p.get('url') || ''
+      );
     }
 
-    // Merge notes
-    let added = 0, updated = 0;
-    for (const n of cloudNotes) {
-      if (deletedIds.has(n.id)) continue; // bỏ qua note đã xóa
-      const local = window.notes.find(x => x.id === n.id);
-      if (!local) {
-        await window.dbPut('notes', n);
-        window.notes.push(n);
-        added++;
-      } else if (n.updatedAt > local.updatedAt) {
-        await window.dbPut('notes', n);
-        window.notes = window.notes.map(x => x.id === n.id ? n : x);
-        updated++;
-      }
-    }
+    // Gọi checkShareParams() ngay khi script chạy (không cần chờ init)
+    checkShareParams();
 
-    // Push local notes chưa có trên cloud
-    const batch = writeBatch(fbDb);
-    for (const n of window.notes) {
-      if (deletedIds.has(n.id)) continue;
-      const onCloud = cloudNotes.find(x => x.id === n.id);
-      if (!onCloud || n.updatedAt > onCloud.updatedAt) {
-        batch.set(ref('notes', n.id), n);
-      }
-    }
+    // ── FOOTER TRÁNH BÀN PHÍM ────────────────────────────────────────────────
+    (function () {
+      if (!window.visualViewport) return;
 
-    // Merge trash
-    for (const n of cloudTrash) {
-      const local = window.trash.find(x => x.id === n.id);
-      if (!local) {
-        await window.dbPut('trash', n);
-        window.trash.push(n);
-      } else if ((n.deletedAt||0) > (local.deletedAt||0)) {
-        await window.dbPut('trash', n);
-        window.trash = window.trash.map(x => x.id === n.id ? n : x);
-      }
-    }
-    for (const n of window.trash) {
-      const onCloud = cloudTrash.find(x => x.id === n.id);
-      if (!onCloud) batch.set(ref('trash', n.id), n);
-    }
+      function adjustFooter() {
+        const vv = window.visualViewport;
+        const windowHeight = window.innerHeight;
+        const viewportHeight = vv.height + vv.offsetTop;
+        const keyboardHeight = Math.max(0, windowHeight - viewportHeight);
 
-    await batch.commit();
-
-    window.notes.sort((a,b) => b.updatedAt - a.updatedAt);
-    window.renderList();
-    setSyncStatus('ok');
-    if (added || updated) window.toast(`Sync ✓ — +${added} mới, ${updated} cập nhật`);
-    else window.toast('Sync ✓');
-    
-    await purgeCloudTrash();
-    await purgeDeletedNotes();
-  } catch(e) {
-    console.error('Sync error', e);
-    setSyncStatus('err');
-    window.toast('Sync thất bại');
-  } finally {
-    isSyncing = false;
-  }
-}
-
-// ── MANUAL SYNC ───────────────────────────────────────────────────────────
-window.manualSync = async function() {
-  if (!fbUser) { window.toast('Vui lòng đăng nhập trước'); return; }
-  await initialSync();
-};
-
-// ── PURGE CLOUD TRASH ─────────────────────────────────────────────────
-async function purgeCloudTrash() {
-  if (!fbUser) return;
-  try {
-    const now = Date.now();
-    const TTL = 30 * 24 * 60 * 60 * 1000;
-    const snap = await getDocs(col('trash'));
-    const batch = writeBatch(fbDb);
-    let count = 0;
-    snap.docs.forEach(d => {
-      const data = d.data();
-      if ((now - (data.deletedAt || 0)) >= TTL) {
-        batch.delete(d.ref);
-        // Ghi vào deletedNotes để thiết bị khác biết
-        batch.set(ref('deletedNotes', data.id), {
-          id: data.id, deletedAt: data.deletedAt
+        document.querySelectorAll('.footer, .trashfooter').forEach(el => {
+          el.style.transform = keyboardHeight > 50
+            ? `translateY(-${keyboardHeight}px)`
+            : '';
         });
-        count++;
+      }
+
+      window.visualViewport.addEventListener('resize', adjustFooter);
+      window.visualViewport.addEventListener('scroll', adjustFooter);
+    })();
+
+    // ── KEYBOARD SHORTCUT ─────────────────────────────────────────────────────
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (document.getElementById('detail-view').classList.contains('active')) {
+          saveDetail();
+        }
       }
     });
-    if (count > 0) await batch.commit();
-  } catch(e) { console.error('purgeCloudTrash error', e); }
-}
 
-// ── PURGE DELETED NOTES ───────────────────────────────────────────────
-async function purgeDeletedNotes() {
-  if (!fbUser) return;
-  try {
-    const now = Date.now();
-    // Giữ 60 ngày để đảm bảo mọi thiết bị đã sync được
-    const TTL = 60 * 24 * 60 * 60 * 1000;
-    const snap = await getDocs(col('deletedNotes'));
-    const batch = writeBatch(fbDb);
-    let count = 0;
-    snap.docs.forEach(d => {
-      const data = d.data();
-      if ((now - (data.deletedAt || 0)) >= TTL) {
-        batch.delete(d.ref);
-        count++;
+    // ── DRAG & DROP ẢNH ───────────────────────────────────────────────────────
+    function setupDragDrop(boxEl, ctx) {
+      boxEl.addEventListener('dragover', e => {
+        e.preventDefault();
+        boxEl.style.opacity = '0.6';
+      });
+      boxEl.addEventListener('dragleave', () => {
+        boxEl.style.opacity = '';
+      });
+      boxEl.addEventListener('drop', e => {
+        e.preventDefault();
+        boxEl.style.opacity = '';
+        const file = e.dataTransfer.files[0];
+        if (!file || !file.type.startsWith('image/')) {
+          toast('Chỉ chấp nhận file ảnh');
+          return;
+        }
+        resizeImg(file, blob => {
+          const r = new FileReader();
+          r.onload = ev => {
+            if (ctx === 'main') {
+              quickImg = ev.target.result;
+              setQThumb(quickImg);
+              toast('Đã thêm ảnh ✓');
+            } else if (ctx === 'detail' && curNote) {
+              curNote.img = ev.target.result;
+              setThumb(curNote.img);
+              notes = notes.map(n => n.id === curNote.id ? curNote : n);
+              toast('Đã chọn ảnh — nhấn Save để lưu');
+            }
+          };
+          r.readAsDataURL(blob);
+        });
+      });
+    }
+
+    // Gắn sau khi DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      setupDragDrop(document.getElementById('qthumb'), 'main');
+      setupDragDrop(document.getElementById('dthumb'), 'detail');
+    });
+
+    // ── PASTE ẢNH TỪ CLIPBOARD ───────────────────────────────────────────────
+    document.addEventListener('paste', e => {
+      // Chỉ xử lý nếu có ảnh trong clipboard
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      let imgFile = null;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          imgFile = item.getAsFile();
+          break;
+        }
+      }
+      if (!imgFile) return;
+
+      // Xác định đang ở view nào
+      const inDetail = document.getElementById('detail-view').classList.contains('active');
+      const inMain = document.getElementById('main-view').classList.contains('active');
+      if (!inDetail && !inMain) return;
+
+      e.preventDefault();
+
+      resizeImg(imgFile, blob => {
+        const r = new FileReader();
+        r.onload = ev => {
+          if (inMain) {
+            quickImg = ev.target.result;
+            setQThumb(quickImg);
+            toast('Đã dán ảnh vào Quick Note ✓');
+          } else if (inDetail && curNote) {
+            curNote.img = ev.target.result;
+            setThumb(curNote.img);
+            notes = notes.map(n => n.id === curNote.id ? curNote : n);
+            toast('Đã dán ảnh — nhấn Save để lưu');
+          }
+        };
+        r.readAsDataURL(blob);
+      });
+    });
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    async function init() {
+      await openDB();
+      [notes, trash] = await Promise.all([dbAll('notes'), dbAll('trash')]);
+      notes.sort((a, b) => b.updatedAt - a.updatedAt);
+      trash.sort((a, b) => b.deletedAt - a.deletedAt);
+      await purgeExpiredTrash();
+
+      // Expose ra window để Firebase module truy cập
+      Object.defineProperty(window, 'notes', { get: () => notes, set: v => { notes = v }, configurable: true });
+      Object.defineProperty(window, 'trash', { get: () => trash, set: v => { trash = v }, configurable: true });
+      Object.defineProperty(window, 'curNote', { get: () => curNote, set: v => { curNote = v }, configurable: true });
+      Object.defineProperty(window, 'dbPut', { get: () => dbPut, configurable: true });
+      Object.defineProperty(window, 'dbDel', { get: () => dbDel, configurable: true });
+      Object.defineProperty(window, 'renderList', { get: () => renderList, configurable: true });
+      Object.defineProperty(window, 'toast', { get: () => toast, configurable: true });
+
+      renderList();
+      await checkShareInbox();
+    }
+    init();
+
+  </script>
+  <script type="module">
+    import { initializeApp }
+      from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+      from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+    import {
+      getFirestore, collection, doc, setDoc, deleteDoc,
+      getDocs, writeBatch, onSnapshot, serverTimestamp
+    }
+      from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
+
+    // ── CONFIG ───────────────────────────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: 'AIzaSyBKyq1leWeWu3PEwPrnbJE1IwN7O262i0g',
+      authDomain: 'lufast-e4e1a.firebaseapp.com',
+      projectId: 'lufast-e4e1a',
+      storageBucket: 'lufast-e4e1a.firebasestorage.app',
+      messagingSenderId: '982801803049',
+      appId: '1:982801803049:web:1eeb7a1ccf6d669614f938'
+    };
+    const fbApp = initializeApp(firebaseConfig);
+    const auth = getAuth(fbApp);
+    const fbDb = getFirestore(fbApp);
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
+    let fbUser = null;
+    let unsubNotes = null;   // listener realtime notes
+    let unsubTrash = null;   // listener realtime trash
+    let unsubDeleted = null; // listener realtime deletedNotes
+    let isSyncing = false;
+
+    // ── COLLECTIONS ───────────────────────────────────────────────────────────
+    const col = (name) => collection(fbDb, 'users', fbUser.uid, name);
+    const ref = (name, id) => doc(fbDb, 'users', fbUser.uid, name, id);
+
+    // ── SYNC INDICATOR ────────────────────────────────────────────────────────
+    function setSyncStatus(s) {
+      ['sync-indicator', 'sync-indicator2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = s ? s : '';
+      });
+    }
+
+    // ── UI ────────────────────────────────────────────────────────────────────
+    function updateAuthUI(user) {
+      const on = !!user;
+      const name = user ? (user.displayName || user.email) : '';
+      ['dd-user', 'dd-user2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = on ? `👤 ${name}` : '';
+        el.classList.toggle('show', on);
+      });
+      ['dd-login-lbl', 'dd-login-lbl2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = on ? 'Đăng xuất' : 'Đăng nhập';
+      });
+      ['dd-sync-btn', 'dd-sync-btn2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = on ? '' : 'none';
+      });
+      setSyncStatus(on ? 'ok' : '');
+    }
+
+    // ── AUTH ──────────────────────────────────────────────────────────────────
+    window.toggleLogin = async function () {
+      if (fbUser) {
+        if (!confirm('Đăng xuất khỏi sync?')) return;
+        stopListeners();
+        await signOut(auth);
+        window.toast('Đã đăng xuất');
+      } else {
+        try {
+          await signInWithPopup(auth, new GoogleAuthProvider());
+        } catch (e) {
+          window.toast('Đăng nhập thất bại');
+          console.error(e);
+        }
+      }
+    };
+
+    onAuthStateChanged(auth, async user => {
+      fbUser = user;
+      updateAuthUI(user);
+      if (user) {
+        await initialSync();   // sync đầy đủ 1 lần khi login
+        startListeners();      // sau đó lắng nghe realtime
+      } else {
+        stopListeners();
       }
     });
-    if (count > 0) await batch.commit();
-  } catch(e) { console.error('purgeDeletedNotes error', e); }
-}
 
-// ── HELPERS GHI CLOUD ────────────────────────────────────────────────────
-async function cloudPut(name, data) {
-  if (!fbUser) return;
-  try { await setDoc(ref(name, data.id), data); setSyncStatus('ok'); }
-  catch(e) { console.error(e); setSyncStatus('err'); }
-}
+    // ── REALTIME LISTENERS ────────────────────────────────────────────────────
+    function startListeners() {
+      if (!fbUser) return;
 
-async function cloudDelete(noteId) {
-  if (!fbUser) return;
-  try {
-    // Xóa khỏi notes collection
-    await deleteDoc(ref('notes', noteId));
-    // Ghi vào deletedNotes để các thiết bị khác biết
-    await setDoc(ref('deletedNotes', noteId), { id: noteId, deletedAt: Date.now() });
-    setSyncStatus('ok');
-  } catch(e) { console.error(e); setSyncStatus('err'); }
-}
+      // Lắng nghe notes thay đổi trên cloud → cập nhật local
+      unsubNotes = onSnapshot(col('notes'), snap => {
+        snap.docChanges().forEach(async change => {
+          const n = change.doc.data();
+          if (change.type === 'added' || change.type === 'modified') {
+            const local = window.notes.find(x => x.id === n.id);
+            if (!local || n.updatedAt > local.updatedAt) {
+              await window.dbPut('notes', n);
+              if (!local) window.notes.push(n);
+              else window.notes = window.notes.map(x => x.id === n.id ? n : x);
+              window.notes.sort((a, b) => b.updatedAt - a.updatedAt);
+              window.renderList();
+            }
+          }
+        });
+      });
 
-async function cloudDeleteTrash(noteId) {
-  if (!fbUser) return;
-  try {
-    await deleteDoc(ref('trash', noteId));
-    await setDoc(ref('deletedNotes', noteId), { id: noteId, deletedAt: Date.now() });
-    setSyncStatus('ok');
-  } catch(e) { console.error(e); setSyncStatus('err'); }
-}
+      // Lắng nghe trash
+      unsubTrash = onSnapshot(col('trash'), snap => {
+        snap.docChanges().forEach(async change => {
+          const n = change.doc.data();
+          if (change.type === 'added' || change.type === 'modified') {
+            const local = window.trash.find(x => x.id === n.id);
+            if (!local || n.deletedAt > (local.deletedAt || 0)) {
+              await window.dbPut('trash', n);
+              if (!local) window.trash.push(n);
+              else window.trash = window.trash.map(x => x.id === n.id ? n : x);
+            }
+          }
+        });
+      });
 
-// ── PATCH CÁC HÀM WRITE ──────────────────────────────────────────────────
-const _saveQuick = window.saveQuick;
-window.saveQuick = async function() {
-  await _saveQuick.apply(this, arguments);
-  if (fbUser && window.notes.length) await cloudPut('notes', window.notes[0]);
-};
+      // Lắng nghe deletedNotes → xóa note khỏi local nếu bị xóa từ thiết bị khác
+      unsubDeleted = onSnapshot(col('deletedNotes'), snap => {
+        snap.docChanges().forEach(async change => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            const { id, deletedAt } = data;
 
-const _saveDetail = window.saveDetail;
-window.saveDetail = async function() {
-  await _saveDetail.apply(this, arguments);
-  if (fbUser && window.curNote) await cloudPut('notes', window.curNote);
-};
+            // Bỏ qua nếu document cũ hơn 5 phút
+            // (tránh xóa note local khi mới login và sync lần đầu)
+            const age = Date.now() - (deletedAt || 0);
+            if (age > 5 * 60 * 1000) return;
 
-const _deleteNote = window.deleteNote;
-window.deleteNote = async function() {
-  const id = window.curNote?.id;
-  await _deleteNote.apply(this, arguments);
-  if (fbUser && id) {
-    await cloudDelete(id);
-    // Push note vào trash cloud
-    const t = window.trash.find(x => x.id === id);
-    if (t) await cloudPut('trash', t);
-  }
-};
-
-const _deleteFromList = window.deleteFromList;
-window.deleteFromList = async function(noteId, event) {
-  await _deleteFromList.apply(this, [noteId, event]);
-  if (fbUser) {
-    await cloudDelete(noteId);
-    const t = window.trash.find(x => x.id === noteId);
-    if (t) await cloudPut('trash', t);
-  }
-};
-
-const _togglePin = window.togglePin;
-window.togglePin = async function(noteId, event) {
-  await _togglePin.apply(this, [noteId, event]);
-  if (fbUser) {
-    const n = window.notes.find(x => x.id === noteId);
-    if (n) await cloudPut('notes', n);
-  }
-};
-
-const _restoreNote = window.restoreNote;
-window.restoreNote = async function(id) {
-  await _restoreNote.apply(this, [id]);
-  if (fbUser) {
-    const n = window.notes.find(x => x.id === id);
-    if (n) {
-      await cloudPut('notes', n);
-      await deleteDoc(ref('trash', id));
-      // Xóa khỏi deletedNotes nếu có (restore = hồi sinh)
-      try { await deleteDoc(ref('deletedNotes', id)); } catch {}
+            // Xóa khỏi notes local nếu còn
+            const inNotes = window.notes.find(x => x.id === id);
+            if (inNotes) {
+              await window.dbDel('notes', id);
+              window.notes = window.notes.filter(x => x.id !== id);
+              window.renderList();
+              window.toast('Một note vừa bị xóa từ thiết bị khác');
+            }
+          }
+        });
+      });
     }
-  }
-};
 
-const _permDel = window.permDel;
-window.permDel = async function(id) {
-  await _permDel.apply(this, [id]);
-  if (fbUser) await cloudDeleteTrash(id);
-};
-
-const _delAllTrash = window.delAllTrash;
-window.delAllTrash = async function() {
-  const ids = window.trash.map(x => x.id);
-  await _delAllTrash.apply(this, arguments);
-  if (fbUser) {
-    const batch = writeBatch(fbDb);
-    for (const id of ids) {
-      batch.delete(ref('trash', id));
-      batch.set(ref('deletedNotes', id), { id, deletedAt: Date.now() });
+    function stopListeners() {
+      if (unsubNotes) { unsubNotes(); unsubNotes = null; }
+      if (unsubTrash) { unsubTrash(); unsubTrash = null; }
+      if (unsubDeleted) { unsubDeleted(); unsubDeleted = null; }
     }
-    await batch.commit();
-    setSyncStatus('ok');
-  }
-};
 
-const _saveShare = window.saveShare;
-window.saveShare = async function() {
-  await _saveShare.apply(this, arguments);
-  if (fbUser && window.notes.length) await cloudPut('notes', window.notes[0]);
-};
+    // ── INITIAL SYNC (đầy đủ, 1 lần khi login/mở app) ────────────────────────
+    async function initialSync() {
+      if (!fbUser || isSyncing) return;
+      isSyncing = true;
+      setSyncStatus('syncing');
+      try {
+        const [cloudNotesSnap, cloudTrashSnap, cloudDeletedSnap] = await Promise.all([
+          getDocs(col('notes')),
+          getDocs(col('trash')),
+          getDocs(col('deletedNotes'))
+        ]);
 
-// ── EXPOSE ────────────────────────────────────────────────────────────────
-window._fbRunSync = initialSync;
-window._fbDB = db;
-window.dbDel = window.dbDel || function(){};
-</script>
+        const cloudNotes = cloudNotesSnap.docs.map(d => d.data());
+        const cloudTrash = cloudTrashSnap.docs.map(d => d.data());
+        const deletedIds = new Set(cloudDeletedSnap.docs.map(d => d.data().id));
+
+        // Xóa những note local đã bị xóa từ thiết bị khác
+        for (const id of deletedIds) {
+          const inNotes = window.notes.find(x => x.id === id);
+          if (inNotes) {
+            await window.dbDel('notes', id);
+            window.notes = window.notes.filter(x => x.id !== id);
+          }
+        }
+
+        // Merge notes
+        let added = 0, updated = 0;
+        for (const n of cloudNotes) {
+          if (deletedIds.has(n.id)) continue; // bỏ qua note đã xóa
+          const local = window.notes.find(x => x.id === n.id);
+          if (!local) {
+            await window.dbPut('notes', n);
+            window.notes.push(n);
+            added++;
+          } else if (n.updatedAt > local.updatedAt) {
+            await window.dbPut('notes', n);
+            window.notes = window.notes.map(x => x.id === n.id ? n : x);
+            updated++;
+          }
+        }
+
+        // Push local notes chưa có trên cloud
+        const batch = writeBatch(fbDb);
+        for (const n of window.notes) {
+          if (deletedIds.has(n.id)) continue;
+          const onCloud = cloudNotes.find(x => x.id === n.id);
+          if (!onCloud || n.updatedAt > onCloud.updatedAt) {
+            batch.set(ref('notes', n.id), n);
+          }
+        }
+
+        // Merge trash
+        for (const n of cloudTrash) {
+          const local = window.trash.find(x => x.id === n.id);
+          if (!local) {
+            await window.dbPut('trash', n);
+            window.trash.push(n);
+          } else if ((n.deletedAt || 0) > (local.deletedAt || 0)) {
+            await window.dbPut('trash', n);
+            window.trash = window.trash.map(x => x.id === n.id ? n : x);
+          }
+        }
+        for (const n of window.trash) {
+          const onCloud = cloudTrash.find(x => x.id === n.id);
+          if (!onCloud) batch.set(ref('trash', n.id), n);
+        }
+
+        await batch.commit();
+
+        window.notes.sort((a, b) => b.updatedAt - a.updatedAt);
+        window.renderList();
+        setSyncStatus('ok');
+        if (added || updated) window.toast(`Sync ✓ — +${added} mới, ${updated} cập nhật`);
+        else window.toast('Sync ✓');
+
+        await purgeCloudTrash();
+        await purgeDeletedNotes();
+      } catch (e) {
+        console.error('Sync error', e);
+        setSyncStatus('err');
+        window.toast('Sync thất bại');
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    // ── MANUAL SYNC ───────────────────────────────────────────────────────────
+    window.manualSync = async function () {
+      if (!fbUser) { window.toast('Vui lòng đăng nhập trước'); return; }
+      await initialSync();
+    };
+
+    // ── PURGE CLOUD TRASH ─────────────────────────────────────────────────
+    async function purgeCloudTrash() {
+      if (!fbUser) return;
+      try {
+        const now = Date.now();
+        const TTL = 30 * 24 * 60 * 60 * 1000;
+        const snap = await getDocs(col('trash'));
+        const batch = writeBatch(fbDb);
+        let count = 0;
+        snap.docs.forEach(d => {
+          const data = d.data();
+          if ((now - (data.deletedAt || 0)) >= TTL) {
+            batch.delete(d.ref);
+            // Ghi vào deletedNotes để thiết bị khác biết
+            batch.set(ref('deletedNotes', data.id), {
+              id: data.id, deletedAt: data.deletedAt
+            });
+            count++;
+          }
+        });
+        if (count > 0) await batch.commit();
+      } catch (e) { console.error('purgeCloudTrash error', e); }
+    }
+
+    // ── PURGE DELETED NOTES ───────────────────────────────────────────────
+    async function purgeDeletedNotes() {
+      if (!fbUser) return;
+      try {
+        const now = Date.now();
+        // Giữ 60 ngày để đảm bảo mọi thiết bị đã sync được
+        const TTL = 60 * 24 * 60 * 60 * 1000;
+        const snap = await getDocs(col('deletedNotes'));
+        const batch = writeBatch(fbDb);
+        let count = 0;
+        snap.docs.forEach(d => {
+          const data = d.data();
+          if ((now - (data.deletedAt || 0)) >= TTL) {
+            batch.delete(d.ref);
+            count++;
+          }
+        });
+        if (count > 0) await batch.commit();
+      } catch (e) { console.error('purgeDeletedNotes error', e); }
+    }
+
+    // ── HELPERS GHI CLOUD ────────────────────────────────────────────────────
+    async function cloudPut(name, data) {
+      if (!fbUser) return;
+      try { await setDoc(ref(name, data.id), data); setSyncStatus('ok'); }
+      catch (e) { console.error(e); setSyncStatus('err'); }
+    }
+
+    async function cloudDelete(noteId) {
+      if (!fbUser) return;
+      try {
+        // Xóa khỏi notes collection
+        await deleteDoc(ref('notes', noteId));
+        // Ghi vào deletedNotes để các thiết bị khác biết
+        await setDoc(ref('deletedNotes', noteId), { id: noteId, deletedAt: Date.now() });
+        setSyncStatus('ok');
+      } catch (e) { console.error(e); setSyncStatus('err'); }
+    }
+
+    async function cloudDeleteTrash(noteId) {
+      if (!fbUser) return;
+      try {
+        await deleteDoc(ref('trash', noteId));
+        await setDoc(ref('deletedNotes', noteId), { id: noteId, deletedAt: Date.now() });
+        setSyncStatus('ok');
+      } catch (e) { console.error(e); setSyncStatus('err'); }
+    }
+
+    // ── PATCH CÁC HÀM WRITE ──────────────────────────────────────────────────
+    const _saveQuick = window.saveQuick;
+    window.saveQuick = async function () {
+      await _saveQuick.apply(this, arguments);
+      if (fbUser && window.notes.length) await cloudPut('notes', window.notes[0]);
+    };
+
+    const _saveDetail = window.saveDetail;
+    window.saveDetail = async function () {
+      await _saveDetail.apply(this, arguments);
+      if (fbUser && window.curNote) await cloudPut('notes', window.curNote);
+    };
+
+    const _deleteNote = window.deleteNote;
+    window.deleteNote = async function () {
+      const id = window.curNote?.id;
+      await _deleteNote.apply(this, arguments);
+      if (fbUser && id) {
+        await cloudDelete(id);
+        // Push note vào trash cloud
+        const t = window.trash.find(x => x.id === id);
+        if (t) await cloudPut('trash', t);
+      }
+    };
+
+    const _deleteFromList = window.deleteFromList;
+    window.deleteFromList = async function (noteId, event) {
+      await _deleteFromList.apply(this, [noteId, event]);
+      if (fbUser) {
+        await cloudDelete(noteId);
+        const t = window.trash.find(x => x.id === noteId);
+        if (t) await cloudPut('trash', t);
+      }
+    };
+
+    const _togglePin = window.togglePin;
+    window.togglePin = async function (noteId, event) {
+      await _togglePin.apply(this, [noteId, event]);
+      if (fbUser) {
+        const n = window.notes.find(x => x.id === noteId);
+        if (n) await cloudPut('notes', n);
+      }
+    };
+
+    const _restoreNote = window.restoreNote;
+    window.restoreNote = async function (id) {
+      await _restoreNote.apply(this, [id]);
+      if (fbUser) {
+        const n = window.notes.find(x => x.id === id);
+        if (n) {
+          await cloudPut('notes', n);
+          await deleteDoc(ref('trash', id));
+          // Xóa khỏi deletedNotes nếu có (restore = hồi sinh)
+          try { await deleteDoc(ref('deletedNotes', id)); } catch { }
+        }
+      }
+    };
+
+    const _permDel = window.permDel;
+    window.permDel = async function (id) {
+      await _permDel.apply(this, [id]);
+      if (fbUser) await cloudDeleteTrash(id);
+    };
+
+    const _delAllTrash = window.delAllTrash;
+    window.delAllTrash = async function () {
+      const ids = window.trash.map(x => x.id);
+      await _delAllTrash.apply(this, arguments);
+      if (fbUser) {
+        const batch = writeBatch(fbDb);
+        for (const id of ids) {
+          batch.delete(ref('trash', id));
+          batch.set(ref('deletedNotes', id), { id, deletedAt: Date.now() });
+        }
+        await batch.commit();
+        setSyncStatus('ok');
+      }
+    };
+
+    const _saveShare = window.saveShare;
+    window.saveShare = async function () {
+      await _saveShare.apply(this, arguments);
+      if (fbUser && window.notes.length) await cloudPut('notes', window.notes[0]);
+    };
+
+    // ── EXPOSE ────────────────────────────────────────────────────────────────
+    window._fbRunSync = initialSync;
+    window._fbDB = db;
+    window.dbDel = window.dbDel || function () { };
+  </script>
 </body>
+
 </html>
