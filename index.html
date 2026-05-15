@@ -358,8 +358,8 @@
       font-size: 14px;
       font-family: inherit;
       outline: none;
-      min-height: 72px;
-      max-height: 100px;
+      min-height: 90px;
+      max-height: 150px;
       background: var(--bg);
       line-height: 1.5;
       transition: border .2s
@@ -389,6 +389,7 @@
     }
 
     .qbtns .bsave {
+      flex: 1.5;
       background: #111;
       color: #fff;
       border-color: #111
@@ -640,7 +641,7 @@
       font-family: inherit;
       outline: none;
       background: var(--bg);
-      min-height: 200px;
+      min-height: 250px;
       line-height: 1.6;
       transition: border .2s
     }
@@ -1196,7 +1197,7 @@
       <span class="app-lbl"
         onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
       <div class="srch-wrap">
-        <input type="search" id="srch" placeholder="Tìm ghi chú…v32" autocomplete="off" oninput="doSearch()"
+        <input type="search" id="srch" placeholder="Tìm ghi chú…v33" autocomplete="off" oninput="doSearch()"
           onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
         <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
       </div>
