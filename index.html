@@ -398,6 +398,16 @@
       opacity: .7
     }
 
+    #qbtn-pin {
+      color: var(--text3);
+      transition: color .2s, background .2s
+    }
+
+    #qbtn-pin.active {
+      color: #f39c12;
+      background: #fff8e1
+    }
+
     /* LIST */
     .listnote {
       flex: 1;
@@ -1186,7 +1196,7 @@
       <span class="app-lbl"
         onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
       <div class="srch-wrap">
-        <input type="search" id="srch" placeholder="Tìm ghi chú…v31" autocomplete="off" oninput="doSearch()"
+        <input type="search" id="srch" placeholder="Tìm ghi chú…v32" autocomplete="off" oninput="doSearch()"
           onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
         <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
       </div>
@@ -1248,7 +1258,15 @@
       <div class="qn-r2">
         <textarea class="qn-ta" id="qn-content" placeholder="Nội dung…" rows="3"></textarea>
         <div class="qbtns">
-          <button onclick="clearQuick()">Clear</button>
+          <button id="qbtn-x" onclick="clearQuick()" title="Xóa nội dung">✕</button>
+          <button id="qbtn-pin" onclick="toggleQuickPin()" title="Pin note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="17" x2="12" y2="22" />
+              <path
+                d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+            </svg>
+          </button>
           <button class="bsave" onclick="saveQuick()">Save</button>
         </div>
       </div>
@@ -1459,7 +1477,7 @@
 
     // ── STATE ─────────────────────────────────────────────────────────────────
     const TRASH_TTL = 30 * 24 * 60 * 60 * 1000;
-    let notes = [], trash = [], curNote = null, showAll = false, curSearchWords = null, imgCtx = null, quickImg = null, originalNote = null;
+    let notes = [], trash = [], curNote = null, showAll = false, curSearchWords = null, imgCtx = null, quickImg = null, originalNote = null, quickPinned = false;
 
     async function purgeExpiredTrash() {
       const now = Date.now();
@@ -1572,8 +1590,24 @@
     function closeDd2() { document.getElementById('dd2').classList.remove('open'); document.getElementById('overlay').classList.remove('on') }
 
     // ── QUICKNOTE ─────────────────────────────────────────────────────────────
-    function clearQuick() { document.getElementById('qn-content').value = ''; document.getElementById('qn-t').value = ''; document.getElementById('qx-t').style.display = 'none'; quickImg = null; setQThumb(null); document.getElementById('qn-content').focus() }
-    async function saveQuick() { const t = document.getElementById('qn-t').value.trim(), c = document.getElementById('qn-content').value.trim(); if (!t && !c && !quickImg) { toast('Không có nội dung để lưu'); return } const n = { id: uid(), title: t, content: c, img: quickImg, createdAt: Date.now(), updatedAt: Date.now() }; await dbPut('notes', n); notes.unshift(n); clearQuick(); renderList(); toast('Đã lưu ✓') }
+    function clearQuick() {
+      document.getElementById('qn-content').value = '';
+      document.getElementById('qn-t').value = '';
+      document.getElementById('qx-t').style.display = 'none';
+      quickImg = null; quickPinned = false;
+      setQThumb(null);
+      const btn = document.getElementById('qbtn-pin');
+      if (btn) { btn.classList.remove('active'); btn.querySelector('svg').setAttribute('fill', 'none'); }
+      document.getElementById('qn-content').focus();
+    }
+    function toggleQuickPin() {
+      quickPinned = !quickPinned;
+      const btn = document.getElementById('qbtn-pin');
+      btn.classList.toggle('active', quickPinned);
+      const svg = btn.querySelector('svg');
+      svg.setAttribute('fill', quickPinned ? 'currentColor' : 'none');
+    }
+    async function saveQuick() { const t = document.getElementById('qn-t').value.trim(), c = document.getElementById('qn-content').value.trim(); if (!t && !c && !quickImg) { toast('Không có nội dung để lưu'); return } const n = { id: uid(), title: t, content: c, img: quickImg, pinned: quickPinned, createdAt: Date.now(), updatedAt: Date.now() }; await dbPut('notes', n); notes.unshift(n); clearQuick(); renderList(); toast('Đã lưu ✓') }
 
     // ── SEARCH ────────────────────────────────────────────────────────────────
     function doSearch() {
