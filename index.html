@@ -1181,6 +1181,18 @@
     .dd-user.show {
       display: block
     }
+
+    #d-pin-btn {
+      color: var(--text3)
+    }
+
+    #d-pin-btn.pinned {
+      color: #f39c12
+    }
+
+    #d-pin-btn svg {
+      pointer-events: none
+    }
   </style>
 </head>
 
@@ -1197,7 +1209,7 @@
       <span class="app-lbl"
         onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
       <div class="srch-wrap">
-        <input type="search" id="srch" placeholder="Tìm ghi chú…v33" autocomplete="off" oninput="doSearch()"
+        <input type="search" id="srch" placeholder="Tìm ghi chú…v34-pin and X" autocomplete="off" oninput="doSearch()"
           onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
         <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
       </div>
@@ -1252,12 +1264,18 @@
           <img id="qthumb-img">
         </div>
         <div class="inp-wrap">
-          <textarea id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')" rows="1"></textarea>
-          <button class="ix" id="qx-t" onclick="clrInp('qn-t','qx-t')">×</button>
+          <textarea id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')" rows="1"
+            style="padding-right:44px"></textarea>
+          <button class="ix" id="qx-t" onclick="clrInp('qn-t','qx-t')" style="font-size:32px">×</button>
         </div>
       </div>
       <div class="qn-r2">
-        <textarea class="qn-ta" id="qn-content" placeholder="Nội dung…" rows="3"></textarea>
+        <div style="position:relative;flex:1">
+          <textarea class="qn-ta" id="qn-content" placeholder="Nội dung…" rows="3" oninput="chkX('qn-content','qx-c')"
+            style="padding-right:44px;width:100%"></textarea>
+          <button class="ix" id="qx-c" onclick="clearQuickContent()"
+            style="top:10px;transform:none;font-size:32px">×</button>
+        </div>
         <div class="qbtns">
           <button id="qbtn-x" onclick="clearQuick()" title="Xóa nội dung">✕</button>
           <button id="qbtn-pin" onclick="toggleQuickPin()" title="Pin note">
@@ -1341,14 +1359,20 @@
         <div class="dtc">
           <div class="inp-wrap" style="flex:1">
             <textarea id="d-title" placeholder="Tiêu đề…"
-              style="width:100%;height:100%;resize:none;padding:8px 26px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:600;outline:none;background:var(--bg);transition:border .2s"
+              style="width:100%;height:100%;resize:none;padding:8px 44px 8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:600;outline:none;background:var(--bg);transition:border .2s"
               oninput="chkX('d-title','dx-t');markDirty()" rows="1"></textarea>
-            <button class="ix" id="dx-t" onclick="clrInp('d-title','dx-t')">×</button>
+            <button class="ix" id="dx-t" onclick="clrInp('d-title','dx-t')" style="font-size:32px">×</button>
           </div>
           <div class="dtime" id="d-time"></div>
         </div>
       </div>
-      <textarea class="dta" id="d-content" placeholder="Nội dung…" oninput="updateLinkList();markDirty()"></textarea>
+      <div style="position:relative">
+        <textarea class="dta" id="d-content" placeholder="Nội dung…"
+          oninput="updateLinkList();markDirty();chkX('d-content','clear-dcontent')"
+          style="padding-right:44px"></textarea>
+        <button class="ix" id="clear-dcontent" onclick="clearDetailContent()"
+          style="top:5px;transform:none;font-size:32px">×</button>
+      </div>
       <div id="link-list-container" style="display:none;margin-top:8px;">
         <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">🔗 Links trong ghi chú:</div>
         <div id="link-list" style="display:flex;flex-direction:column;gap:4px;"></div>
@@ -1357,7 +1381,14 @@
     <div class="footer">
       <button onclick="copyFirstLine()">Copy 1st</button>
       <button onclick="copyDetail()">Copy All</button>
-      <button onclick="clearDetailContent()">Clear</button>
+      <button id="d-pin-btn" onclick="toggleDetailPin()" title="Pin/Unpin">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="17" x2="12" y2="22" />
+          <path
+            d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+        </svg>
+      </button>
       <button class="bdd" onclick="deleteNote()">Delete</button>
       <button class="bsd" onclick="saveDetail()">Save</button>
       <button onclick="backDetail()">Back</button>
@@ -1599,6 +1630,13 @@
       setQThumb(null);
       const btn = document.getElementById('qbtn-pin');
       if (btn) { btn.classList.remove('active'); btn.querySelector('svg').setAttribute('fill', 'none'); }
+      chkX('qn-t', 'qx-t');
+      chkX('qn-content', 'qx-c');
+      document.getElementById('qn-content').focus();
+    }
+    function clearQuickContent() {
+      document.getElementById('qn-content').value = '';
+      chkX('qn-content', 'qx-c');
       document.getElementById('qn-content').focus();
     }
     function toggleQuickPin() {
@@ -1694,6 +1732,7 @@
       fromSearch = !!isSearch;
       document.getElementById('d-title').value = curNote.title || '';
       document.getElementById('d-content').value = curNote.content || '';
+      chkX('d-content', 'clear-dcontent');
       document.getElementById('dx-t').style.display = curNote.title ? 'block' : 'none';
       document.getElementById('d-time').textContent = fmt(curNote.updatedAt);
       // sync search box in detail header
@@ -1704,6 +1743,7 @@
       updateLinkList();
       showView('detail-view');
       document.querySelector('#detail-view .bsd').classList.remove('dirty');
+      updateDetailPinBtn();
     }
     function setThumb(src) { const img = document.getElementById('dthumb-img'), ph = document.getElementById('dthumb-ph'); if (src) { img.src = src; img.style.display = 'block'; ph.style.display = 'none' } else { img.style.display = 'none'; ph.style.display = 'flex' } }
     function onThumbClick() { curNote && curNote.img ? openLb(curNote.img) : triggerImg('detail') }
@@ -1889,7 +1929,23 @@
       if (!document.getElementById('d-content').value) return;
       document.getElementById('d-content').value = '';
       updateLinkList();
+      chkX('d-content', 'clear-dcontent');
       document.getElementById('d-content').focus();
+    }
+    async function toggleDetailPin() {
+      if (!curNote) return;
+      curNote.pinned = !curNote.pinned;
+      updateDetailPinBtn();
+      markDirty();
+    }
+
+    function updateDetailPinBtn() {
+      const btn = document.getElementById('d-pin-btn');
+      if (!btn || !curNote) return;
+      const pinned = curNote.pinned;
+      btn.classList.toggle('pinned', pinned);
+      btn.querySelector('svg').setAttribute('fill', pinned ? 'currentColor' : 'none');
+      btn.title = pinned ? 'Bỏ ghim' : 'Pin';
     }
     async function deleteNote() { if (!confirm('Xóa note này?')) return; await dbDel('notes', curNote.id); const tr = { ...curNote, deletedAt: Date.now() }; await dbPut('trash', tr); notes = notes.filter(n => n.id !== curNote.id); trash.push(tr); toast('Đã xóa'); goHome() }
     function backDetail() {
