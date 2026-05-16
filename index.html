@@ -856,7 +856,7 @@
 
     .tcbtns {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       gap: 6px;
       flex-shrink: 0
     }
@@ -1209,8 +1209,8 @@
       <span class="app-lbl"
         onclick="goHome();setTimeout(()=>document.getElementById('qn-content').focus(),80)">LuFast</span>
       <div class="srch-wrap">
-        <input type="search" id="srch" placeholder="Tìm ghi chú…v34-pin and X" autocomplete="off" oninput="doSearch()"
-          onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
+        <input type="search" id="srch" placeholder="Tìm ghi chú…v39-restore del Horizontal" autocomplete="off"
+          oninput="doSearch()" onfocus="this.select()" onkeydown="if(event.key==='Enter')this.select()">
         <button class="srch-x" id="srch-x" onclick="clearSearch()">×</button>
       </div>
       <div id="sync-indicator" title="Sync status"></div>
@@ -1265,6 +1265,7 @@
         </div>
         <div class="inp-wrap">
           <textarea id="qn-t" placeholder="Tiêu đề…" oninput="chkX('qn-t','qx-t')" rows="1"
+            onkeydown="if(event.key === 'Tab') { event.preventDefault(); document.getElementById('qn-content').focus(); }"
             style="padding-right:44px"></textarea>
           <button class="ix" id="qx-t" onclick="clrInp('qn-t','qx-t')" style="font-size:32px">×</button>
         </div>
@@ -1702,7 +1703,7 @@
           const title = fromSearch ? hlText(n.title || '', words) : linkify(esc(n.title || ''));
           const content = fromSearch ? hlText(n.content || '', words) : linkify(esc(n.content || ''));
           html += `<div class="ncard${n.pinned ? ' pinned' : ''}" onclick="openDetail('${n.id}',${fromSearch})">
-        ${n.img ? `<div class="nthumb" style="background-image:url('${n.img}')"></div>` : `<div class="nthumb" style="background:var(--surface)"></div>`}
+        ${n.img ? `<div class="nthumb" style="background-image:url('${n.img}')"></div>` : `<div class="nthumb" style="background:var(--surface);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="24" height="24" fill="var(--text3)"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>`}
         <div class="nbody">
           <div class="ntitle">${title || '<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
           <div class="ncontent">${content}</div>
@@ -1825,7 +1826,7 @@
           const title = hlText(n.title || '', words);
           const content = hlText(n.content || '', words);
           html += `<div class="ncard${n.pinned ? ' pinned' : ''}" onclick="openNoteFromOverlay('${n.id}')">
-        ${n.img ? `<div class="nthumb" style="background-image:url('${n.img}')"></div>` : `<div class="nthumb" style="background:var(--surface)"></div>`}
+        ${n.img ? `<div class="nthumb" style="background-image:url('${n.img}')"></div>` : `<div class="nthumb" style="background:var(--surface);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="24" height="24" fill="var(--text3)"><path d="M13 3L4 14h8l-1 7 9-11h-8z"/></svg></div>`}
         <div class="nbody">
           <div class="ntitle">${title || '<span style="color:var(--text3)">Không tiêu đề</span>'}</div>
           <div class="ncontent">${content}</div>
@@ -2924,7 +2925,8 @@
     window.deleteNote = async function () {
       const id = window.curNote?.id;
       await _deleteNote.apply(this, arguments);
-      if (fbUser && id) {
+      const stillExists = window.notes.find(x => x.id === id);
+      if (fbUser && id && !stillExists) {
         await cloudDelete(id);
         // Push note vào trash cloud
         const t = window.trash.find(x => x.id === id);
@@ -2935,7 +2937,8 @@
     const _deleteFromList = window.deleteFromList;
     window.deleteFromList = async function (noteId, event) {
       await _deleteFromList.apply(this, [noteId, event]);
-      if (fbUser) {
+      const stillExists = window.notes.find(x => x.id === noteId);
+      if (fbUser && !stillExists) {
         await cloudDelete(noteId);
         const t = window.trash.find(x => x.id === noteId);
         if (t) await cloudPut('trash', t);
@@ -2975,7 +2978,7 @@
     window.delAllTrash = async function () {
       const ids = window.trash.map(x => x.id);
       await _delAllTrash.apply(this, arguments);
-      if (fbUser) {
+      if (fbUser && window.trash.length === 0 && ids.length > 0) {
         const batch = writeBatch(fbDb);
         for (const id of ids) {
           batch.delete(ref('trash', id));
